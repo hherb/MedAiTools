@@ -7,6 +7,9 @@ a collection of tools and python libraries for use in medical practice and resea
 - MedRxivScraper: a system to download pre-publications from medRxiv (thanks guys, wonderful service!!!) & have the papers automatically summarised & critiqued.
   The purppose is to establish an automatised "news service" that presents the freshest pre-publications, incluing food for thought (the LLM generated critique of the papers)
 
-- StudyCritique: LLM based system to analyze publications, eg finding weaknesses in argumentation or methods, abtracgtive rather than extractove summaries of textx of arbitray length, and re-ranking of retrieved documents in alignment with user preferences & domain
+- StudyCritique: LLM based system to analyze publications, eg finding weaknesses in argumentation or methods, abstractive rather than extractive summaries of textx of arbitray length, and re-ranking of retrieved documents in alignment with user preferences & domain
+
+![Image of a robotic health professional tending to a patient](https://github.com/hherb/MedAiTools/blob/main/Robodoc2%20copy.png?raw=true)
+
 
   
