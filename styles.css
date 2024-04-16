@@ -1,0 +1,63 @@
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+header {
+    background-color: #007BFF;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+}
+
+h1, h2 {
+    margin: 0;
+}
+
+.article {
+    background-color: #fff;
+    margin: 20px auto;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    max-width: 800px;
+}
+
+.publication-title {
+    color: #007BFF;
+    font-size: 1.5em;
+}
+
+.authors {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.summary {
+    margin-top: 10px;
+}
+
+.abstract-container > button {
+    background-color: #007BFF;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    outline: none;
+}
+
+.abstract-container > button:hover {
+    background-color: #0056b3;
+}
+
+.abstract {
+    padding: 10px;
+    border-top: 1px solid #eee;
+    margin-top: 10px;
+}
+
+button {
+    margin-top: 10px;
+}
