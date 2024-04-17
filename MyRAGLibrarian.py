@@ -1,6 +1,16 @@
+# This code has been released by Dr Horst Herb under the GPL 3.0 license
+# contact author under hherb@aiinhealth.org if you want to collaborate or need
+# a different license
+# Experimental draft - not ready for production!!!
+#
+# this library provides a RAG (retrieval augmented generation) pipeline
+# allowing to ingest and query PDF and other documents
+# If run as a standalone, it provides a simple web interface to upload documents
+# and to query the knowledge base
+#
 # TODO:
 # - run qdrant as a server
-# - if the collection is still empty iun qdrant, create it
+# - if the collection is still empty in qdrant, create it
 # - check if file paths exist, incl model
 
 from llama_index.core import (
@@ -41,15 +51,27 @@ from llama_index.llms.llama_cpp import LlamaCPP
 
 class RAGLibrarian:
 
-	def __init__(self, llm_path= "./Hermes-2-Pro-Mistral-7B.Q8_0.gguf",
+	def __init__(self, llm_path= """./Hermes-2-Pro-Mistral-7B.Q8_0.gguf""",
 		embedding_model_name = "BAAI/bge-m3", # consider mxbai-embed-large-v1
 		
 		vectordb_path = "./vectors.qdrant", 
 		vectordb_collection="stuff", 
 		similarity_top_k=10,
-		evaluating=True):
+		evaluating=True):		
+		"""
+		This class allows to ingest documents into a embedding vector database
+		and retrieve data from it, providing context for inference with  a LLM
+		The vectors have persistent storage in a Qdrant vector database
 		
-		self._llm_path = llm_path,
+		:param llm_path: path of a LLM compatible with LlamaCPP, usually a .gguf file
+		:param embedding_model_name: the HuggingFace model used for our embeddings
+		:param vectordb_path: our persistent storage path for the Qdrant vector database
+		:param vectordb_collection: the name of the Qdrant collection used for our instance
+		:param similarity_to_k: the max number of index query returns (the top_k highest scoring)
+		
+		"""
+		
+		self._llm_path = llm_path
 		self._embedding_model_name = embedding_model_name
 		self._vectordb_path = vectordb_path
 		self._vectordb_collection= vectordb_collection
@@ -73,8 +95,8 @@ class RAGLibrarian:
 		print(self._llm_path)
 		self._llm = LlamaCPP(
 			#model_url=model_url,
-			#model_path = self._llm_path,
-			model_path="./Hermes-2-Pro-Mistral-7B.Q8_0.gguf",
+			model_path = self._llm_path,
+			#model_path="./Hermes-2-Pro-Mistral-7B.Q8_0.gguf",
 			temperature=0.1,
 			max_new_tokens=1024,
 			context_window=10000,
@@ -84,6 +106,7 @@ class RAGLibrarian:
 			#completion_to_prompt= self._completion_to_prompt,
 			verbose=True,
 		)
+		
 		
 		colbert_reranker = ColbertRerank(
 			top_n=5,
@@ -101,7 +124,8 @@ class RAGLibrarian:
 		if self._evaluating:
 			self.set_evaluation_on()
 		
-		
+	##########################################################################################
+ 	
 	def set_evaluation_on(self):
 		
 		#our debugger / evaluator of the LLM / RAG pipeline
@@ -129,7 +153,8 @@ class RAGLibrarian:
 		queries_df = get_qa_with_reference(px.Client())
 		retrieved_documents_df = get_retrieved_documents(px.Client())
 		
-	
+	##########################################################################################
+ 
 	def count_files(self, path, extension=".pdf"):
 		"""
 		Counts the number of PDF files in a given directory.
@@ -146,7 +171,8 @@ class RAGLibrarian:
 				file_count += 1
 		return file_count
 	
-		
+	##########################################################################################
+ 	
 	def load_documents(self, input_dir="./data"):
 		"""Loads documents in PDF format from the path 'input_dir''
 		   recursively and returns a list of pdf file paths"""	
@@ -169,13 +195,15 @@ class RAGLibrarian:
 		#documents is a list of dictionaries including document metadata and extracted plain text
 		return documents
 		
-			
+	##########################################################################################
+ 		
 	def ingest_documents(self, document_path):
 		documents=self._load_documents(document_path)
 		if documents and len(documents)>0:
 			index_documents(documents)
 		
-	
+	##########################################################################################
+ 
 	def index_documents(self, documents=None):
 		"""indexes pdf files and other documents (see llama_index documentation re formats)
 		using the specified embedding model, and stores them in the specified storage context"""	
@@ -197,7 +225,8 @@ class RAGLibrarian:
 			},
 		)	
 		
-			
+	##########################################################################################
+ 		
 	def run_query(self, message, history=[], doc=None):
 		query = message
 		print(query)
@@ -206,7 +235,7 @@ class RAGLibrarian:
 		answer=str(self._query_engine.query(query))
 		return(answer)
 		
-		
+##########################################################################################		
 		
 if __name__ == "__main__":
 	import gradio as gr	 #our web based user interface
