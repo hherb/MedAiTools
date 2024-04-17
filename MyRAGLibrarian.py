@@ -42,11 +42,12 @@ from llama_index.llms.llama_cpp import LlamaCPP
 class RAGLibrarian:
 
 	def __init__(self, llm_path= "./Hermes-2-Pro-Mistral-7B.Q8_0.gguf",
-		embedding_model_name = "BAAI/bge-m3", 
+		embedding_model_name = "BAAI/bge-m3", # consider mxbai-embed-large-v1
+		
 		vectordb_path = "./vectors.qdrant", 
 		vectordb_collection="stuff", 
 		similarity_top_k=10,
-		evaluating=False):
+		evaluating=True):
 		
 		self._llm_path = llm_path,
 		self._embedding_model_name = embedding_model_name
@@ -98,7 +99,7 @@ class RAGLibrarian:
 		self._query_engine = self._index.as_query_engine(llm=self._llm, similarity_top_k = self._similarity_top_k, node_postprocessors=[colbert_reranker],)
 						
 		if self._evaluating:
-			set_evaluation_on
+			self.set_evaluation_on()
 		
 		
 	def set_evaluation_on(self):
@@ -120,6 +121,9 @@ class RAGLibrarian:
 
 		# Once you have started a Phoenix server, you can start your LlamaIndex application and configure it to send traces to Phoenix. To do this, you will have to add configure Phoenix as the global handler
 		set_global_handler("arize_phoenix")
+		
+		#launch our evaluator / LLM debugger
+		px.active_session().url
 		
 		#feed our evaluator/debugger:
 		queries_df = get_qa_with_reference(px.Client())

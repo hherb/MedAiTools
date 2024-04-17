@@ -11,26 +11,28 @@
 import os
 import requests
 import json
+import webbrowser
 from datetime import datetime, timedelta
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 from tqdm import tqdm #progress bar
 
 import StudyCritique  #our own AI based paper analyzer
 
-#A template for a neat output of retrieved documents. Also requires teh file "styles.css"
+#A template for a neat output of retrieved documents. Also requires the file "styles.css"
 #in the current working directory
 html_template = """<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Today's reading list</title>
+	<title>MedRxiv reading list</title>
 	<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 	<header>
-		<h1>Horst's reading list</h1>
-		<h2>my helpful librarian, fetching the latest from medRxiv every day</h2>
+		<h1>{title}</h1>
+		<h4>{priority_filter}</h4>
+		<h4>{secondary_filter}</h4>
 	</header>
 
 	{html}
@@ -83,7 +85,8 @@ class MedrXivScraper:
 			self._summarizer_model = T5ForConditionalGeneration.from_pretrained(self._summarizer_name)
 		self._criticise = criticise
 		self._analyzer = StudyCritique.StudyCritique()
-##########################################################################################		
+		
+	##########################################################################################		
 
 			
 	def set_keywords(self, keywords):
@@ -96,6 +99,9 @@ class MedrXivScraper:
 		
 		self._keywords = keywords
 		
+	##########################################################################################		
+
+		
 	def set_category(self, categories=["Emergency Medicine", ], priority=True):
 		"""If a category is stated, the retrieved documents will be filtered by that category.
 		TODO: allow a list of categories
@@ -106,7 +112,7 @@ class MedrXivScraper:
 		self._categories = categories
 		self._prioritize_category = priority
 
-##########################################################################################		
+	##########################################################################################		
 
 		
 	def fetch_medrxiv_publications(self, testing=False):
@@ -195,7 +201,7 @@ class MedrXivScraper:
 						
 		return result
 	 
-##########################################################################################		
+	##########################################################################################		
 
 		
 	def screen_publications_by_keywords(self, publications, keywords):
@@ -227,17 +233,6 @@ class MedrXivScraper:
 		
 	##########################################################################################		
 	
-		
-	def rank_publications_by_interest(self, publications, prompt = "Is the following context useful for a doctor working in emergency medicine?"):
-		pass
-	
-	##########################################################################################		
-	
-		
-	def evaluate_publications(self, publications, prompt = "List the weaknesses you can identify in the following publication. Use dot points."):
-		pass
-	
-	##########################################################################################
 	
 	def summarize(self, publications):
 		"""create a brief summary for each publication in a list of publications
@@ -247,7 +242,9 @@ class MedrXivScraper:
 		
 		TODO: presently, summarisation is hardcoded with the extractive T5 summarizer, which
 		seemed to work better than BERT or BART on brief initial testing 
-		This should be user definable, and allow for more advanced abstractive summarizers		
+		This should be user definable, and allow for more advanced abstractive summarizers	
+		
+		If you want advanced summarisation, use the more resource intensive StudyCritique module	
 		"""
 		
 		print(f"summarizing {len(publications)} documents ...") 
@@ -342,19 +339,43 @@ class MedrXivScraper:
 				<p class="summary">{doc['summary']}</p>
 				<div class="abstract-container">
 					<button onclick="toggleAbstract(this)">Read Abstract</button>
-					<p class="abstract" style="display:none;">{doc['abstract']}</p>
+					<div class="abstract" style="display:none;">{doc['abstract']}</div>
 				</div>
 				<div class="abstract-container">
 					<button onclick="toggleCritique(this)">Read Critique</button>
-					<p class="abstract" style="display:none;">{doc['critique']}</p>
+					<div class="abstract" style="display:none;">{doc['critique']}</div>
 				</div>
 				<a href="{pdfurl}" target="_blank"> <button>Full PDF</button></a>
 			</section>			
 			"""
-		html_output = html_template.format(html=html)
+		titlestr = f"MedRxiv reading list {self._from_date} - {self._end_date}"
+		priority_filter_str = ""
+		secondary_filter_str = ""
+
+		
+		if self._prioritize_category:
+			priority_filter_str =  "Primary filter: " +	', '.join(self._catgories)
+			secondary_filter_str =  "Secondary filter: " +	', '.join(self._keywords)
+
+		else:
+			priority_filter_str =  "Primary filter: " +	', '.join(self._keywords)
+			secondary_filter_str =  "Secondary filter: " +	', '.join(self._categories)
+			
+		html_output = html_template.format(html=html, 
+			title=titlestr, 
+			priority_filter= priority_filter_str,
+			secondary_filter = secondary_filter_str )
 		
 		return html_output
 		
+	##########################################################################################		
+
+		
+	def get_output_filename(self, format="html"):
+		enddate = self._end_date.replace("-", "")
+		fromdate =  self._from_date.replace("-", "")
+		return f"{enddate}_{fromdate}_MedRxiv.{format}"
+	
 		
 
 	##########################################################################################		
@@ -374,23 +395,15 @@ if __name__ == "__main__":
 	scraper.set_keywords(keywords)
 	
 	publications = scraper.fetch_medrxiv_publications()
-		
-	# # Print the titles and DOIs of the fetched publications
-# 	for publication in publications:
-# 		print(f"\nTitle: {publication['title']}")
-# 		print(f"\nAuthors: {publication['authors']}")
-# 		print(f"\nDOI: {publication['doi']}")
-# 		print(f"\nPublication Date: {publication['date']}")
-# 		print(f"\nAbstract: {publication['abstract']}\n")
-# 		print(f"\nSummary: {publication['summary']}\n")
-# 	
-# 		print("\n=========================================================================\n")
-# 		#scraper.download_pdf(publication)
-	
 	
 	# Optionally, save the results to a file
 	#with open('new_medrxiv_publications.json', 'w') as f:
 		#json.dump(publications, f, indent=4)
-		
-	with open('new_medrxiv_publications.html', 'w') as f:
+	
+	fname = scraper.get_output_filename('html')
+	with open(fname, 'w') as f:
 		f.write(scraper.list_abstracts(publications, format="html"))
+	try:
+		webbrowser.open('file://' + os.path.realpath(fname))
+	except:
+		print(f"unable to launch web browser to open {fname}")
