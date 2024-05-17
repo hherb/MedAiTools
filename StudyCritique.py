@@ -1,7 +1,27 @@
+# MetaAnalysisAppraiser.py
+# Copyright (C) 2024  Dr Horst Herb
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import os
+
+from llmsherpa.readers import LayoutPDFReader 
+llmsherpa_api_url = "http://localhost:5010/api/parseDocument?renderFormat=all&useNewIndentParser=true"
 
 #our local LLM engine - one could use eg Ollama instead, but llamacpp performs very well on Apple metal too
 from llama_index.llms.llama_cpp import LlamaCPP
+
 
 SYSTEM_PROMPT = """you are an experienced health scientist and clinician. 
 You will analyze the presented publication or study to the best of your abilities
@@ -12,7 +32,7 @@ Always try and find out whether overall mortality was among the outcome criteria
 """
 
 CRITIQUE_PROMPT = """Identify the main weaknesses in this study / argumentation 
-	and list them as dot points. Here is the document: """
+	and list them as dot points in html format (<li> ...</li>). Here is the document: """
 
 RELEVANCE_FOR_CATEGORY_PROMPT = """If you think the following text is relevant to the practice of {category}, 
 	please state in less than 4	 sentences why you think so. Be brief and terse in your response! """
@@ -29,12 +49,39 @@ SUMMARY_PROMPT = """summarize the following document into a maximum of {n_senten
 				 Pay attention not to miss any details of importance in the summary. 
 				 Here is the document: """
 	
-MODEL_PATH = "./mistral-Summarizer-7b-instruct-v0.2.Q8_0.gguf"
-#MODEL_PATH = "./Hermes-2-Pro-Mistral-7B.Q8_0.gguf"
+MODEL_PATH = "./models/mistral-Summarizer-7b-instruct-v0.2.Q8_0.gguf"
+#MODEL_PATH = "./models/Hermes-2-Pro-Mistral-7B.Q8_0.gguf"
 
 
-
-
+# from pdfplumber import pdfplumber
+# class pdf2markdown:
+  
+# 	def __init__(self):
+# 		self._document_markdown = ""
+	
+# 	# Function to convert a PDF table to a Markdown table with None handling      
+# 	def table_to_markdown(self, table):                                                 
+# 		cleaned_table = [[str(cell) if cell is not None else '' for cell in row]  for row in table]                                                             
+# 		markdown = "|" + "|".join(cleaned_table[0]) + "|\n" + "|---"*len(cleaned_table[0]) + "|\n"                                          
+# 		for row in cleaned_table[1:]:                                             
+# 			markdown += "|" + "|".join(row) + "|\n"                               
+# 		return markdown                                                           
+																								
+   
+# 	def convert(self, pdf_path):
+# 		self._pdf_path = pdf_path
+# 		with pdfplumber.open(self._pdf_path) as pdf:                                        
+# 			for i, page in enumerate(pdf.pages):                                      
+# 				text = page.extract_text()                                            
+# 				self._document_markdown += text + "\n\n" if text else ''                    
+# 				tables = page.extract_tables()                                        
+# 				for j, table in enumerate(tables):                                    
+# 					table_md = table_to_markdown(table)                               
+# 					self._document_markdown += table_md + "\n\n" 
+# 		return self._document_markdown                           
+					                           
+																				
+ 
 class StudyCritique:
 
 	def __init__(self, gguf=MODEL_PATH, system_prompt = SYSTEM_PROMPT):
@@ -79,8 +126,17 @@ class StudyCritique:
 	def _completion_to_prompt(self, completion):
 		return f"<|system|>\n</s>\n<|user|>\n{completion}</s>\n<|assistant|>\n"
 
-			
-	def summary(self, document, max_sentences=10, prompt=SUMMARY_PROMPT):
+	def pdf2document(self, pdf_file):
+		#print(f"pdf2document param: {pdf_file}")
+		if pdf_file is not None:
+			#print(f"trying to convert {pdf_file}")
+			pdf_reader = LayoutPDFReader(llmsherpa_api_url)
+			doc = pdf_reader.read_pdf(pdf_file)
+			return(doc.to_text())
+		else:
+			print("ERROR: empty document sent for conversion")
+
+	def summary(self, document, max_sentences=15, prompt=SUMMARY_PROMPT):
 		print("composing a summary of the publication ...")
 		response = self._llm.complete(prompt.format(n_sentences=str(max_sentences)) + document)
 		return(response)

@@ -26,7 +26,6 @@ html_template = """<!DOCTYPE html>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>MedRxiv reading list</title>
-	<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 	<header>
@@ -138,42 +137,50 @@ class MedrXivScraper:
 			server
 		"""
 		
+		self._all_publications = []
 		if testing:
 			try:
+				print("reading dumpfile (testing mode)")
 				with open('dumpfile.json', 'r') as file:
 					self._all_publications = json.load(file)
 			except:
+				print("dumpfile not found")
 				pass
-
-		base_url = f"https://api.medrxiv.org/details/medrxiv/{self._from_date}/{self._end_date}"
-		print(f"attempting to fetch new publications from {base_url}")
-		cursor = 0
-		all_results = []
-	
-		while True:
-			url = f"{base_url}/{cursor}/json"
-			response = requests.get(url)
-			data = response.json()
-	
-			publications = data.get('collection', [])
-			all_results.extend(publications)
-	
-			# Check if more results are available
-			messages = data.get('messages', [])
-			if messages:
-				message = messages[0]
-				total_items = message.get('count', 0)
-				if cursor + len(publications) >= total_items:
-					break  # No more results
-				cursor += len(publications)
-			else:
-				break  # No messages, likely no more results
-	
-		self._all_publications.extend(all_results)
+		if (not testing) or (len(self._all_publications) == 0):
+			base_url = f"https://api.medrxiv.org/details/medrxiv/{self._from_date}/{self._end_date}"
+			print(f"attempting to fetch new publications from {base_url}")
+			cursor = 0
+			all_results = []
+		
+			while True:
+				url = f"{base_url}/{cursor}/json"
+				response = requests.get(url)
+				data = response.json()
+		
+				publications = data.get('collection', [])
+				all_results.extend(publications)
+		
+				# Check if more results are available
+				messages = data.get('messages', [])
+				if messages:
+					message = messages[0]
+					total_items = message.get('count', 0)
+					if cursor + len(publications) >= total_items:
+						break  # No more results
+					cursor += len(publications)
+				else:
+					break  # No messages, likely no more results
+		
+			self._all_publications.extend(all_results)
 		
 		result = self._all_publications
-		with open('dumpfile.json', 'w') as f:
-			json.dump(json.dumps(result, indent=4), f, indent=4)
+		if not testing:
+			# Optionally, save the results to a file
+			try:
+				with open(f"medrxiv_{self._from_date}_{self._end_date}.json", 'w') as f:
+					json.dump(result, f, indent=4)
+			except:
+				print("failed to save medrxiv fetch results to file")
 		
 		print(f"fetched {len(result)} publications")
 		
