@@ -13,10 +13,18 @@ import requests
 import json
 import webbrowser
 from datetime import datetime, timedelta
-from transformers import T5Tokenizer, T5ForConditionalGeneration
+#from transformers import T5Tokenizer, T5ForConditionalGeneration
+import litellm
+from litellm import completion
+litellm.set_verbose=True
 from tqdm import tqdm #progress bar
 
 import StudyCritique  #our own AI based paper analyzer
+
+from medai.tools.apikeys import load_api_keys  
+#The API keys needed for this to work - they will be loaded from the os environment:
+APIS=('OPENAI_API_KEY',)
+load_api_keys(APIS)
 
 #A template for a neat output of retrieved documents. Also requires the file "styles.css"
 #in the current working directory
@@ -28,12 +36,7 @@ html_template = """<!DOCTYPE html>
 	<title>MedRxiv reading list</title>
 </head>
 <body>
-	<header>
-		<h1>{title}</h1>
-		<h4>{priority_filter}</h4>
-		<h4>{secondary_filter}</h4>
-	</header>
-
+	
 	{html}
 	
 	<script>
@@ -65,7 +68,15 @@ class MedrXivScraper:
 		Default: not specified = no LLM analysis
 	:return: List of publications in dict format fetched from the medRxiv API.
 	"""
-	def __init__(self, from_date, end_date=None, max_candidates=10, prompt=None, criticise=True, summarize=True, abstract_summarizer=False):
+	def __init__(self, from_date, 
+			  end_date=None, 
+			  llm=completion, 
+			  max_candidates=10, 
+			  prompt=None, 
+			  criticise=True, 
+			  summarize=True, 
+			  abstract_summarizer=False):
+		
 		self._from_date = from_date
 		if end_date is None:
 			end_date = datetime.now().strftime("%Y-%m-%d") #today
@@ -75,15 +86,17 @@ class MedrXivScraper:
 		self._keywords=[]
 		self._categories=[]
 		self._prioritize_category = False
+		self._max_candidates = max_candidates
 		self._summarize = summarize
 		self._abstract_summarizer = abstract_summarizer
-		if self._summarize and not self._abstract_summarizer:
-			# Load pre-trained T5 model and tokenizer
-			self._summarizer_name = "t5-small"
-			self._summarizer_tokenizer = T5Tokenizer.from_pretrained(self._summarizer_name, legacy=False)
-			self._summarizer_model = T5ForConditionalGeneration.from_pretrained(self._summarizer_name)
+		#if self._summarize and not self._abstract_summarizer:
+			# # Load pre-trained T5 model and tokenizer
+			# self._summarizer_name = "t5-small"
+			# self._summarizer_tokenizer = T5Tokenizer.from_pretrained(self._summarizer_name, legacy=False)
+			# self._summarizer_model = T5ForConditionalGeneration.from_pretrained(self._summarizer_name)
+		self._llm = llm
 		self._criticise = criticise
-		self._analyzer = StudyCritique.StudyCritique()
+		self._analyzer = StudyCritique.StudyCritique(self._llm)
 		
 	##########################################################################################		
 
@@ -114,7 +127,7 @@ class MedrXivScraper:
 	##########################################################################################		
 
 		
-	def fetch_medrxiv_publications(self, testing=False):
+	def fetch_medrxiv_publications(self, testing=True):
 		"""
 		Fetches a list of publications from medrxiv from start_date to end_date
 		TODO: finish testing functionality, where actual download is bypassed using cached data
@@ -135,6 +148,8 @@ class MedrXivScraper:
 			abstract
 			published
 			server
+			summary (if summarize=True)
+			critique (if criticise=True)
 		"""
 		
 		self._all_publications = []
@@ -191,12 +206,12 @@ class MedrXivScraper:
 		if len(self._keywords) > 0:
 			result =  self.screen_publications_by_keywords(result, self._keywords) 
 			
-		if not self._prioritize_category: #filetr after keyword filter
+		if not self._prioritize_category: #filter after keyword filter
 			if len(self._categories) > 0:
 				result = self._screen_publications_by_categories(result, self._categories)		
 			
 		if self._summarize:
-			result =  self.summarize(result)
+			result =  self.summarize(result) #adds "summary" key to each publication
 			
 		if self._criticise:
 			new_results=[]
@@ -258,16 +273,23 @@ class MedrXivScraper:
 		summarized_publications=[]
 		
 		for publication in tqdm(publications):
-			# Tokenize and summarize the input text using T5
-			inputs = self._summarizer_tokenizer.encode("summarize: " + publication['abstract'], return_tensors="pt", max_length=1024, truncation=True)
-			summary_ids = self._summarizer_model.generate(inputs, max_length=250, min_length=50, length_penalty=2.0, num_beams=4, early_stopping=True)
+			# # Tokenize and summarize the input text using T5
+			# inputs = self._summarizer_tokenizer.encode("summarize: " + publication['abstract'], return_tensors="pt", max_length=1024, truncation=True)
+			# summary_ids = self._summarizer_model.generate(inputs, max_length=250, min_length=50, length_penalty=2.0, num_beams=4, early_stopping=True)
 			
-			# Decode and output the summary
-			summary_t5	= self._summarizer_tokenizer.decode(summary_ids[0], skip_special_tokens=True)
-			publication['summary'] = summary_t5
-			#print(summary_t5+"\n-----------------------")
+			# # Decode and output the summary
+			# summary_t5	= self._summarizer_tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+			# publication['summary'] = summary_t5
+			# #print(summary_t5+"\n-----------------------")
+			prompt = f"""summarize the text embedded between the ':::' by extracting the key message 
+			and important information in no more than 5 sentences  :::{publication['abstract']}:::"""
+			response = self._llm(
+  				model="gpt-3.5-turbo",
+  				messages=[{ "content": f"{prompt}","role": "user"}]
+			)
+			publication['summary'] = response.choices[0].message.content.strip()
 			summarized_publications.append(publication)
-			
+
 		return(summarized_publications)
 
 	##########################################################################################		
@@ -341,18 +363,20 @@ class MedrXivScraper:
 			pdfurl = self.get_pdf_URL(doc)
 			html += f"""
 			<section class="article">
-				<h3 class="publication-title">{doc['title']} - ({doc['date']})</h3>
+				<h3 class="publication-title"> {doc['title']} - ({doc['date']})</h3>
 				<p class="authors">{doc['authors']}</p>
 				<p class="summary">{doc['summary']}</p>
 				<div class="abstract-container">
-					<button onclick="toggleAbstract(this)">Read Abstract</button>
+					<button onclick="toggleAbstract(this)"> Read Abstract </button>
 					<div class="abstract" style="display:none;">{doc['abstract']}</div>
 				</div>
 				<div class="abstract-container">
-					<button onclick="toggleCritique(this)">Read Critique</button>
+					<button onclick="toggleCritique(this)"> Read Critique </button>
 					<div class="abstract" style="display:none;">{doc['critique']}</div>
 				</div>
-				<a href="{pdfurl}" target="_blank"> <button>Full PDF</button></a>
+				<a href="{pdfurl}" target="_blank"> <button> Full PDF </button></a>
+				<hr>
+				<br>
 			</section>			
 			"""
 		titlestr = f"MedRxiv reading list {self._from_date} - {self._end_date}"
@@ -398,7 +422,7 @@ if __name__ == "__main__":
 	
 	keywords = ["GPT4", "machine learning", "deep learning", "large language model", "LLM", "Anthropic", "OpenAI", "Artifical Intelligence"]
 	
-	scraper = MedrXivScraper(from_date=start_date, end_date=end_date, summarize=True)
+	scraper = MedrXivScraper(from_date=start_date, end_date=end_date, llm=completion, summarize=True)
 	scraper.set_keywords(keywords)
 	
 	publications = scraper.fetch_medrxiv_publications()

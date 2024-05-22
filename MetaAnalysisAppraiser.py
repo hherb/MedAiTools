@@ -94,9 +94,6 @@ from medai.tools.pdf import parse_pdf
 
 
 import asyncio
-#import nest_asyncio
-#nest_asyncio.apply()
-
 
 appraiser_logger = logging.getLogger('Appraisals')
 appraiser_logger.setLevel(logging.DEBUG)
@@ -151,10 +148,8 @@ class Appraiser:
         """Processes the list of questions one by one and generates a response for each
         The responses are stored in self.responses"""    
         all_start_time= time.time()
-        i=0
         print(f">>>{self.questions} [{len(self.questions)}] TYPE: {type(self.questions)} <<<") 
         for question in self.questions:
-            i+=1
             response = self.evaluate(question)
             self.responses.append(response)
             appraiser_logger.info(f"\nAppraisal complete, response = {response}, L={len(self.responses)}\n")

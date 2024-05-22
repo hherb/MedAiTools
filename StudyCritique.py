@@ -1,4 +1,4 @@
-# MetaAnalysisAppraiser.py
+# StudyCritique.py
 # Copyright (C) 2024  Dr Horst Herb
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,12 +15,16 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import os
+from litellm import completion
+from medai.tools.apikeys import load_api_keys	  
+from PDFParser import PDFParser
 
-from llmsherpa.readers import LayoutPDFReader 
-llmsherpa_api_url = "http://localhost:5010/api/parseDocument?renderFormat=all&useNewIndentParser=true"
+FAST_LLM="gpt-3.5-turbo-instruct"
+SMART_LLM="gpt-4o"
 
-#our local LLM engine - one could use eg Ollama instead, but llamacpp performs very well on Apple metal too
-from llama_index.llms.llama_cpp import LlamaCPP
+#The API keys needed for this to work - they will be loaded from the os environment:
+APIS=('OPENAI_API_KEY', 'LLAMA_CLOUD_API_KEY')
+load_api_keys(APIS)
 
 
 SYSTEM_PROMPT = """you are an experienced health scientist and clinician. 
@@ -32,7 +36,9 @@ Always try and find out whether overall mortality was among the outcome criteria
 """
 
 CRITIQUE_PROMPT = """Identify the main weaknesses in this study / argumentation 
-	and list them as dot points in html format (<li> ...</li>). Here is the document: """
+	and list them as dot points in html format (<li> ...</li>). 
+	ONLY return the list without any introductory sentences.
+	Here is the document: """
 
 RELEVANCE_FOR_CATEGORY_PROMPT = """If you think the following text is relevant to the practice of {category}, 
 	please state in less than 4	 sentences why you think so. Be brief and terse in your response! """
@@ -48,109 +54,44 @@ RERANK_BY_RELEVANCE_PROMPT = """You are a senior doctor working in Emergency Med
 SUMMARY_PROMPT = """summarize the following document into a maximum of {n_sentences}.
 				 Pay attention not to miss any details of importance in the summary. 
 				 Here is the document: """
-	
-MODEL_PATH = "./models/mistral-Summarizer-7b-instruct-v0.2.Q8_0.gguf"
-#MODEL_PATH = "./models/Hermes-2-Pro-Mistral-7B.Q8_0.gguf"
-
-
-# from pdfplumber import pdfplumber
-# class pdf2markdown:
-  
-# 	def __init__(self):
-# 		self._document_markdown = ""
-	
-# 	# Function to convert a PDF table to a Markdown table with None handling      
-# 	def table_to_markdown(self, table):                                                 
-# 		cleaned_table = [[str(cell) if cell is not None else '' for cell in row]  for row in table]                                                             
-# 		markdown = "|" + "|".join(cleaned_table[0]) + "|\n" + "|---"*len(cleaned_table[0]) + "|\n"                                          
-# 		for row in cleaned_table[1:]:                                             
-# 			markdown += "|" + "|".join(row) + "|\n"                               
-# 		return markdown                                                           
-																								
-   
-# 	def convert(self, pdf_path):
-# 		self._pdf_path = pdf_path
-# 		with pdfplumber.open(self._pdf_path) as pdf:                                        
-# 			for i, page in enumerate(pdf.pages):                                      
-# 				text = page.extract_text()                                            
-# 				self._document_markdown += text + "\n\n" if text else ''                    
-# 				tables = page.extract_tables()                                        
-# 				for j, table in enumerate(tables):                                    
-# 					table_md = table_to_markdown(table)                               
-# 					self._document_markdown += table_md + "\n\n" 
-# 		return self._document_markdown                           
-					                           
-																				
+	                        
+					                           																			
  
 class StudyCritique:
 
-	def __init__(self, gguf=MODEL_PATH, system_prompt = SYSTEM_PROMPT):
+	def __init__(self, 
+			     llm, 
+				 system_prompt = SYSTEM_PROMPT):
 		self._system_prompt = system_prompt
-		self._llmpath = gguf
-		self._initialize_AI()
-		
-		
-	def _initialize_AI(self):
-		self._llm = LlamaCPP(
-			model_path = self._llmpath,
-			temperature=0.3,
-			max_new_tokens=16000,
-			context_window=32000,
-			generate_kwargs={},
-			model_kwargs={"n_gpu_layers": -1},	# if compiled to use GPU
-			messages_to_prompt= self._messages_to_prompt,
-			completion_to_prompt= self._completion_to_prompt,
-			verbose=True,
+		self._llm = llm
+
+	def complete(self, prompt, model=FAST_LLM):
+		response = self._llm( model=model,
+  			messages=[{ "content": f"{prompt}","role": "user"}]
 		)
-		
+		return(response.choices[0].message.content.strip())
 	
-	def _messages_to_prompt(self, messages):
-		prompt = ""
-		for message in messages:
-			if message.role == 'system':
-				prompt += f"<|system|>\n{message.content}</s>\n"
-			elif message.role == 'user':
-				prompt += f"<|user|>\n{message.content}</s>\n"
-			elif message.role == 'assistant':
-				prompt += f"<|assistant|>\n{message.content}</s>\n"
-	
-		# ensure we start with a system prompt, insert blank if needed
-		if not prompt.startswith("<|system|>\n"):
-			prompt = "<|system|>\n</s>\n" + prompt
-	
-		# add final assistant prompt
-		prompt = prompt + "<|assistant|>\n"
-	
-		return prompt
-
-	def _completion_to_prompt(self, completion):
-		return f"<|system|>\n</s>\n<|user|>\n{completion}</s>\n<|assistant|>\n"
-
 	def pdf2document(self, pdf_file):
-		#print(f"pdf2document param: {pdf_file}")
 		if pdf_file is not None:
-			#print(f"trying to convert {pdf_file}")
-			pdf_reader = LayoutPDFReader(llmsherpa_api_url)
-			doc = pdf_reader.read_pdf(pdf_file)
-			return(doc.to_text())
+			doc = PDFParser.parse(pdf_file)
+			return(doc)
 		else:
 			print("ERROR: empty document sent for conversion")
 
 	def summary(self, document, max_sentences=15, prompt=SUMMARY_PROMPT):
 		print("composing a summary of the publication ...")
-		response = self._llm.complete(prompt.format(n_sentences=str(max_sentences)) + document)
+		response = self.complete(prompt.format(n_sentences=str(max_sentences)) + document)
 		return(response)
 		
 	def critique(self, document, prompt=CRITIQUE_PROMPT):
 		print("preparing a critique of the publication ...")
-		response = self._llm.complete(prompt + document)
+		response = self.complete(prompt + document, model=SMART_LLM)
 		return(response)
 		
 	def rerank(self, summaries, top_k=5, prompt=RERANK_BY_RELEVANCE_PROMPT):
 		print("re-ranking summaries...")
 		myprompt = prompt.format(summaries=summaries, top_k=top_k)
-		#print(myprompt)
-		response = self._llm.complete(myprompt)
+		response = self.complete(myprompt)
 		return(response)
 		
 if __name__ == "__main__":
@@ -193,8 +134,8 @@ Summary 6: vascular thromboembolism (VTE) poses a significant risk during the ac
 
 Summary 7: despite decades of research, sepsis remains a major challenge faced by patients, clinicians, and medical systems worldwide. we developed a predictive model for sepsis using data from the physionet cardiology challenge 2019 ICU database. the model was designed to anticipate sepsis before the appearance of clinical symptoms."""
 	
-	sc = StudyCritique()
-	#print(f"SUMMARY:\n {sc.summary(document)}\n" + 50*"="+"\n")
+	sc = StudyCritique(completion)
+	print(f"SUMMARY:\n {sc.summary(document)}\n" + 50*"="+"\n")
 	print(f"CRITIQUE:\n {sc.critique(document)}\n" + 50*"="+"\n")
 	print(f"RERANK:\n {sc.rerank(summaries=unranked)}\n" + 50*"="+"\n")
 
