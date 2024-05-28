@@ -13,18 +13,20 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
+# ! pip install litellm, llama-parse, weasyprint, markdown
 import os
-from litellm import completion
+#from litellm import completion
 from medai.tools.apikeys import load_api_keys	  
 from PDFParser import PDFParser
+from medai.LLM import Model, LLM, get_local_default_model, get_local_32k_model
 
-FAST_LLM="gpt-3.5-turbo-instruct"
-SMART_LLM="gpt-4o"
+#FAST_LLM="gpt-3.5-turbo-instruct"
+#SMART_LLM="gpt-4o"
 
 #The API keys needed for this to work - they will be loaded from the os environment:
-APIS=('OPENAI_API_KEY', 'LLAMA_CLOUD_API_KEY')
-load_api_keys(APIS)
+#APIS=('OPENAI_API_KEY', 'LLAMA_CLOUD_API_KEY')
+#load_api_keys(APIS)
+
 
 
 SYSTEM_PROMPT = """you are an experienced health scientist and clinician. 
@@ -60,16 +62,17 @@ SUMMARY_PROMPT = """summarize the following document into a maximum of {n_senten
 class StudyCritique:
 
 	def __init__(self, 
-			     llm, 
+			     llm=LLM(get_local_32k_model()), 
 				 system_prompt = SYSTEM_PROMPT):
 		self._system_prompt = system_prompt
-		self._llm = llm
+		self.llm = llm
 
-	def complete(self, prompt, model=FAST_LLM):
-		response = self._llm( model=model,
-  			messages=[{ "content": f"{prompt}","role": "user"}]
-		)
-		return(response.choices[0].message.content.strip())
+	def complete(self, prompt):
+		# response = self._llm( model=model,
+  		# 	messages=[{ "content": f"{prompt}","role": "user"}]
+		# )
+		# return(response.choices[0].message.content.strip())
+		return self.llm.generate(prompt, quickanswer=True)
 	
 	def pdf2document(self, pdf_file):
 		if pdf_file is not None:
@@ -85,7 +88,7 @@ class StudyCritique:
 		
 	def critique(self, document, prompt=CRITIQUE_PROMPT):
 		print("preparing a critique of the publication ...")
-		response = self.complete(prompt + document, model=SMART_LLM)
+		response = self.complete(prompt + document)
 		return(response)
 		
 	def rerank(self, summaries, top_k=5, prompt=RERANK_BY_RELEVANCE_PROMPT):
@@ -134,7 +137,7 @@ Summary 6: vascular thromboembolism (VTE) poses a significant risk during the ac
 
 Summary 7: despite decades of research, sepsis remains a major challenge faced by patients, clinicians, and medical systems worldwide. we developed a predictive model for sepsis using data from the physionet cardiology challenge 2019 ICU database. the model was designed to anticipate sepsis before the appearance of clinical symptoms."""
 	
-	sc = StudyCritique(completion)
+	sc = StudyCritique()
 	print(f"SUMMARY:\n {sc.summary(document)}\n" + 50*"="+"\n")
 	print(f"CRITIQUE:\n {sc.critique(document)}\n" + 50*"="+"\n")
 	print(f"RERANK:\n {sc.rerank(summaries=unranked)}\n" + 50*"="+"\n")
