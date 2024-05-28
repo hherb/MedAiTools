@@ -1,440 +1,265 @@
-# This code has been released by Dr Horst Herb under the GPL 3.0 license
-# contact author under hherb@aiinhealth.org if you want to collaborate or need
-# a different license
-# Experimental draft - not ready for production!!!
-#
-# this library fetches a list of publications (title, authors, abstracts) from medrxiv 
-# from start_date to end_date
-# then screens that list for keywords
-# then downloads all pdf files of those pre-screened publications of interest
-
+import DBBackend
 import os
 import requests
-import json
-import webbrowser
 from datetime import datetime, timedelta
-#from transformers import T5Tokenizer, T5ForConditionalGeneration
-import litellm
-from litellm import completion
-litellm.set_verbose=True
-from tqdm import tqdm #progress bar
-
-import StudyCritique  #our own AI based paper analyzer
-
-from medai.tools.apikeys import load_api_keys  
-#The API keys needed for this to work - they will be loaded from the os environment:
-APIS=('OPENAI_API_KEY',)
-load_api_keys(APIS)
-
-#A template for a neat output of retrieved documents. Also requires the file "styles.css"
-#in the current working directory
-html_template = """<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>MedRxiv reading list</title>
-</head>
-<body>
-	
-	{html}
-	
-	<script>
-		function toggleAbstract(button) {{
-			var abstract = button.nextElementSibling;
-			abstract.style.display = abstract.style.display === 'none' ? 'block' : 'none';
-		}}
-		function toggleCritique(button) {{
-			var critique = button.nextElementSibling;
-			critique.style.display = critique.style.display === 'none' ? 'block' : 'none';
-		}}
-	</script>
-</body>
-</html>
-"""
+from tqdm import tqdm
+from Summarizer import Summarizer
+from KeywordExtractor import KeywordExtractor
 
 
 class MedrXivScraper:
-	"""
-	Fetches a list of publications from medrxiv from start_date to end_date
-	
-	:param from_date: str, format yyyy-mm-dd
-		Required
-	:param end_date: str, format yyyy-mm-dd. 
-		Default is today's date
-	:param max_candidates: int, number of publications (ordered from most to least suited) to be returned. 
-		Default = 20
-	:param prompt: str. If specified, an LLM will use it to rank the publications in alignment with the prompt
-		Default: not specified = no LLM analysis
-	:return: List of publications in dict format fetched from the medRxiv API.
-	"""
-	def __init__(self, from_date, 
-			  end_date=None, 
-			  llm=completion, 
-			  max_candidates=10, 
-			  prompt=None, 
-			  criticise=True, 
-			  summarize=True, 
-			  abstract_summarizer=False):
-		
-		self._from_date = from_date
-		if end_date is None:
-			end_date = datetime.now().strftime("%Y-%m-%d") #today
-		self._end_date = end_date
-		self._prompt = prompt
-		self._all_publications=[] #the unfiltered and unscreened downloaded publications
-		self._keywords=[]
-		self._categories=[]
-		self._prioritize_category = False
-		self._max_candidates = max_candidates
-		self._summarize = summarize
-		self._abstract_summarizer = abstract_summarizer
-		#if self._summarize and not self._abstract_summarizer:
-			# # Load pre-trained T5 model and tokenizer
-			# self._summarizer_name = "t5-small"
-			# self._summarizer_tokenizer = T5Tokenizer.from_pretrained(self._summarizer_name, legacy=False)
-			# self._summarizer_model = T5ForConditionalGeneration.from_pretrained(self._summarizer_name)
-		self._llm = llm
-		self._criticise = criticise
-		self._analyzer = StudyCritique.StudyCritique(self._llm)
-		
-	##########################################################################################		
+    """fetches and caches publications from medrXiv"""
 
-			
-	def set_keywords(self, keywords):
-		"""if a list of keyword strings is set, the retrieved documents will be filtered by 
-		the presence of ANY of the listed keywords.
-		TODO: logical operators such as AND, OR, NOT
-		
-		:param keywords: list of keywords, eg ["emergency", "fracture"]. capitalisation agnostic.
-		"""
-		
-		self._keywords = keywords
-		
-	##########################################################################################		
+    def __init__(self, callback_notification=print, tqdm=tqdm):
+        """initializes the MedrXivScraper
+        :param callback_notification: a callback function to notify the user of progress. If None, no notification is given.
+            if provided, the function should take a string as an argument and display it to the user.
+        :param tqdm: a tqdm object to display progress bars. If None, no progress bars are displayed.
+        """
+        self.tqdm=tqdm
+        self.callback_notification = callback_notification
+        self.db = DBBackend.DBMedrXiv()
+        self.callback_notification("MedrXivScraper initialized")
 
-		
-	def set_category(self, categories=["Emergency Medicine", ], priority=True):
-		"""If a category is stated, the retrieved documents will be filtered by that category.
-		TODO: allow a list of categories
-		:param category: string. See https://www.medrxiv.org/about/FAQ
-		:param priority: boolean. If priority is True, then the category filter will be applied prior to the keyword filter
-		"""
-		
-		self._categories = categories
-		self._prioritize_category = priority
 
-	##########################################################################################		
 
-		
-	def fetch_medrxiv_publications(self, testing=True):
-		"""
-		Fetches a list of publications from medrxiv from start_date to end_date
-		TODO: finish testing functionality, where actual download is bypassed using cached data
-		
-		:return: List of publication dicts fetched from the medRxiv API.
-		The following metadata elements are returned as strings in each dict:
-			doi
-			title
-			authors
-			author_corresponding
-			author_corresponding_institution
-			date
-			version
-			type
-			license
-			category
-			jats xml path
-			abstract
-			published
-			server
-			summary (if summarize=True)
-			critique (if criticise=True)
-		"""
-		
-		self._all_publications = []
-		if testing:
-			try:
-				print("reading dumpfile (testing mode)")
-				with open('dumpfile.json', 'r') as file:
-					self._all_publications = json.load(file)
-			except:
-				print("dumpfile not found")
-				pass
-		if (not testing) or (len(self._all_publications) == 0):
-			base_url = f"https://api.medrxiv.org/details/medrxiv/{self._from_date}/{self._end_date}"
-			print(f"attempting to fetch new publications from {base_url}")
-			cursor = 0
-			all_results = []
-		
-			while True:
-				url = f"{base_url}/{cursor}/json"
-				response = requests.get(url)
-				data = response.json()
-		
-				publications = data.get('collection', [])
-				all_results.extend(publications)
-		
-				# Check if more results are available
-				messages = data.get('messages', [])
-				if messages:
-					message = messages[0]
-					total_items = message.get('count', 0)
-					if cursor + len(publications) >= total_items:
-						break  # No more results
-					cursor += len(publications)
-				else:
-					break  # No messages, likely no more results
-		
-			self._all_publications.extend(all_results)
-		
-		result = self._all_publications
-		if not testing:
-			# Optionally, save the results to a file
-			try:
-				with open(f"medrxiv_{self._from_date}_{self._end_date}.json", 'w') as f:
-					json.dump(result, f, indent=4)
-			except:
-				print("failed to save medrxiv fetch results to file")
-		
-		print(f"fetched {len(result)} publications")
-		
-		if self._prioritize_category: #filter before keyword filter
-			if len(self._categories) > 0:
-				result = self._screen_publications_by_categories(result, self._categories)
-		
-		if len(self._keywords) > 0:
-			result =  self.screen_publications_by_keywords(result, self._keywords) 
-			
-		if not self._prioritize_category: #filter after keyword filter
-			if len(self._categories) > 0:
-				result = self._screen_publications_by_categories(result, self._categories)		
-			
-		if self._summarize:
-			result =  self.summarize(result) #adds "summary" key to each publication
-			
-		if self._criticise:
-			new_results=[]
-			for publication in tqdm(result):
-				critique = self._analyzer.critique(publication['abstract'])
-				publication['critique'] = critique
-				new_results.append(publication)
-			result=new_results	
-						
-		return result
-	 
-	##########################################################################################		
+    def split_daterange_into_days(self, start_date: str, end_date: str) ->list[str]:
+        """splits a date range into individual days
+        :param start_date: the start date in the format 'YYYY-MM-DD'
+        :param end_date: the end date in the format 'YYYY-MM-DD'
+        :return: a list of dates in the format 'YYYY-MM-DD'"""
 
-		
-	def screen_publications_by_keywords(self, publications, keywords):
-		"""
-		Screens a list of publications for specified keywords in the title or abstract.
-	
-		:param publications: List of publication dicts fetched from the medRxiv API.
-		:param keywords: List of keywords to search for in the title and abstract.
-		:return: List of publication dicts that contain any of the keywords in their title or abstract.
-		"""
-		print(f"screening {len(publications)} publications for the specified key words...")
-		print(keywords)
-		print("...")
-		
-		filtered_publications = []
-		keywords_lower = [keyword.lower() for keyword in keywords]
-	
-		for publication in tqdm(publications):
-			title = publication.get('title', '').lower()
-			abstract = publication.get('abstract', '').lower()
-	
-			# Check if any of the keywords appear in the title or abstract
-			if any(keyword in title or keyword in abstract for keyword in keywords_lower):
-				filtered_publications.append(publication)
-				print(publication['title']+"\n-----------------------")
-				
-		print(f"{len(filtered_publications)} publications passed screening")
-		return filtered_publications	
-		
-	##########################################################################################		
-	
-	
-	def summarize(self, publications):
-		"""create a brief summary for each publication in a list of publications
-		
-		:param publication: dictionary, see fetch_medrxiv_publications() for keys
-		:return: the list of publications, with an added key "summary" and the respective summary data
-		
-		TODO: presently, summarisation is hardcoded with the extractive T5 summarizer, which
-		seemed to work better than BERT or BART on brief initial testing 
-		This should be user definable, and allow for more advanced abstractive summarizers	
-		
-		If you want advanced summarisation, use the more resource intensive StudyCritique module	
-		"""
-		
-		print(f"summarizing {len(publications)} documents ...") 
-		summarized_publications=[]
-		
-		for publication in tqdm(publications):
-			# # Tokenize and summarize the input text using T5
-			# inputs = self._summarizer_tokenizer.encode("summarize: " + publication['abstract'], return_tensors="pt", max_length=1024, truncation=True)
-			# summary_ids = self._summarizer_model.generate(inputs, max_length=250, min_length=50, length_penalty=2.0, num_beams=4, early_stopping=True)
-			
-			# # Decode and output the summary
-			# summary_t5	= self._summarizer_tokenizer.decode(summary_ids[0], skip_special_tokens=True)
-			# publication['summary'] = summary_t5
-			# #print(summary_t5+"\n-----------------------")
-			prompt = f"""summarize the text embedded between the ':::' by extracting the key message 
-			and important information in no more than 5 sentences  :::{publication['abstract']}:::"""
-			response = self._llm(
-  				model="gpt-3.5-turbo",
-  				messages=[{ "content": f"{prompt}","role": "user"}]
-			)
-			publication['summary'] = response.choices[0].message.content.strip()
-			summarized_publications.append(publication)
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
+        delta = end_date - start_date
+        dates = []
+        for i in range(delta.days + 1):
+            day = start_date + timedelta(days=i)
+            dates.append(day.strftime('%Y-%m-%d'))
+        return dates
+    
 
-		return(summarized_publications)
 
-	##########################################################################################		
+    def fetch_from_db(self, date: str) -> list[dict]:
+        """fetches publications from the database for a given date
+        :param date: the date in the format 'YYYY-MM-DD'
+        :return: a list of publications in the form of dictionaries
+        """
+        publications = self.db.Query()
+        results = self.db.search(publications.date == date)
+        print(f"Found {len(results)} results in the database")
+        return results
+    
+    
+    def fetch_from_db_by_doi(self, doi: str) -> dict:
+        """fetches publications from the database for a given doi
+        :param doi: the doi of the publication
+        :return: a publication in the form of a dictionary
+        """
+        publications = self.db.Query()
+        results = self.db.search(publications.doi == doi)
+        print(f"Found {len(results)} results in the database")
+        if len(results) > 0:
+            return results
+        else:
+            return None
+    
 
-	
-	def get_pdf_URL(self, publication):
-		"""creates a URL for full PDF download from a retrieved publication
+    def fetch_from_server(self, date: str) -> list[dict]:
+        """fetches publications from the medrXiv server for a given date
+        :param date: the date in the format 'YYYY-MM-DD'
+        :return: a list of publications in the form of dictionaries
+        """
+        base_url = f"https://api.medrxiv.org/details/medrxiv/{date}/{date}"
+        self.callback_notification(f"attempting to fetch new publications from {base_url}")
+
+        all_publications = []   
+        cursor = 0    
+        while True:
+            url = f"{base_url}/{cursor}/json"
+            response = requests.get(url)
+            if response.status_code != 200:
+                self.callback_notification(f"Failed to fetch data from {url}. Status code: {response.status_code}")
+                break
+            data = response.json()
+            publications = data.get('collection', [])
+            all_publications.extend(publications)
+            # Check if more results are available
+            messages = data.get('messages', [])
+            if messages:
+                message = messages[0]
+                total_items = message.get('count', 0)
+                if cursor + len(publications) >= total_items:
+                    break  # No more results
+                cursor += len(publications)
+            else:
+                break  # No messages, likely no more results
+        self.callback_notification(f"fetched {len(all_publications)} publications")
+        results = self.db.insert_multiple(all_publications)
+        self.callback_notification(f"inserted {len(results)} into database")
+        return publications
+
+    
+    def get_pdf_url(self, publication : dict) -> str:
+        """creates a URL for full PDF download from a retrieved publication
 		
 		:param publication: dictionary, see fetch_medrxiv_publications() for keys
 		:return: URL for downloading a PDF
 		"""
-		
-		pdf_url = f"https://www.medrxiv.org/content/{publication['doi']}.full.pdf"
-		return(pdf_url)
+        pdf_url = f"https://www.medrxiv.org/content/{publication['doi']}.full.pdf"
+        return(pdf_url)
+    
+    
+    def fetch_pdf_from_publication(self, publication: dict, path: str = "./library") -> str:
+        """downloads the PDF of a publication to a given path
+        :param publication: a publication in the form of a dictionary
+        :param path: the path to save the PDF to
+        :return: the path to the saved PDF
+        """
+        pdf_url = self.get_pdf_url(publication)
+        
+        #file name = sanitized doi
+        pdf_path = os.path.join(path, f"{publication['doi'].replace('/', '-')}.pdf")
+        
+        #is the file already in our library?
+        if os.path.isfile(pdf_path):
+            self.callback_notification(f"PDF already exists at {pdf_path}")
+            return pdf_path
+        
+        #fetch the pdf
+        self.callback_notification(f"Attempting to fetch PDF from {pdf_url}")
+        response = requests.get(pdf_url)
+        if response.status_code != 200:
+            self.callback_notification(f"Failed to fetch PDF from {pdf_url}. Status code: {response.status_code}")
+            return None
+        
+        #save the pdf file
+        with open(pdf_path, 'wb') as f:
+            f.write(response.content)
+            publication['pdf_path'] = pdf_path
+            self.db.update(publication, doc_ids=[publication.doc_id])    
+        return pdf_path
+    
 
-	##########################################################################################		
+    def fetch_medrxiv_papers(self, from_date: str, to_date: str) -> list[dict]: 
+        """Fetches publications from medrXiv for the given time span between from_date and to_date.
+        ReturnsGets the publications them from cache if they have been fetched before, otherwise fetches them from the internet.
+        Publications are saved to a local file for future use, as well as inserted into the caching database.
 
-	
-	def download_pdf(self, publication, output_dir = "./pdf"):
-		"""download the corresponding pdf file for a given medRxiv publication in dict format
-			into the specified path. The pdf will be renamed with the title of the publication
-			
-			:param publication: dictionary, see fetch_medrxiv_publications() for keys
-			:param output_dir: string. the path into which the pdf will be downloaded. 
-			                   The specified output directory will be created if it doesn't exist
-			
-			:return Boolean - True if succesfully downloaded, else False
-			"""
-		
-		if not os.path.exists(output_dir):
-			os.makedirs(output_dir)
-	
-		pdf_url = get_pdf_URL(publication)
-		title = publication.get('title', '')
-		pdf_filename = f"{output_dir}/{title}.pdf"
-	
-		try:
-			response = requests.get(pdf_url)
-			if response.status_code == 200:
-				with open(pdf_filename, "wb") as pdf_file:
-					pdf_file.write(response.content)
-					print(f"Downloaded: {title}.pdf")
-					print("\n=========================================================================\n")
-				return True
-			else:
-				print(f"Failed to download: {title}.pdf")
-				return False
-		except Exception as e:
-			print(f"Error downloading {title}.pdf: {e}")
-			return False
-	
-	
-	##########################################################################################		
-			
-	def list_abstracts(self, publications, format="html", fromfile=""):
-		"""
-		Generates a single HTML document string with each  title followed by its abstract.
-		
-		:param publications: publications in dict format, see fetch_medrxiv_publications()
-		:return: A string containing the composed HTML document.
-		"""
-		
-		if len(fromfile) > 0:
-			with open(fromfile, 'r') as file:
-				publications = json.load(file)
-		
-		html=""	 #we will create a list of publications by appending to this string
-		
-		print("Generating html ...")
-		for doc in tqdm(publications):
-			pdfurl = self.get_pdf_URL(doc)
-			html += f"""
-			<section class="article">
-				<h3 class="publication-title"> {doc['title']} - ({doc['date']})</h3>
-				<p class="authors">{doc['authors']}</p>
-				<p class="summary">{doc['summary']}</p>
-				<div class="abstract-container">
-					<button onclick="toggleAbstract(this)"> Read Abstract </button>
-					<div class="abstract" style="display:none;">{doc['abstract']}</div>
-				</div>
-				<div class="abstract-container">
-					<button onclick="toggleCritique(this)"> Read Critique </button>
-					<div class="abstract" style="display:none;">{doc['critique']}</div>
-				</div>
-				<a href="{pdfurl}" target="_blank"> <button> Full PDF </button></a>
-				<hr>
-				<br>
-			</section>			
-			"""
-		titlestr = f"MedRxiv reading list {self._from_date} - {self._end_date}"
-		priority_filter_str = ""
-		secondary_filter_str = ""
+        :param from_date: The start date in the format 'YYYY-MM-DD'
+        :param to_date: The end date in the format 'YYYY-MM-DD'
+        :param testing: If True, fetches publications from a local text file instead of the internet
 
-		
-		if self._prioritize_category:
-			priority_filter_str =  "Primary filter: " +	', '.join(self._catgories)
-			secondary_filter_str =  "Secondary filter: " +	', '.join(self._keywords)
+        :return: A list of publications in the form of dictionaries with the following keys:
+                doi
+                title
+                authors
+                author_corresponding
+                author_corresponding_institution
+                date
+                version
+                type
+                license
+                category
+                jats xml path
+                abstract
+                published
+                server
+        """   
+        all_publications = []
 
-		else:
-			priority_filter_str =  "Primary filter: " +	', '.join(self._keywords)
-			secondary_filter_str =  "Secondary filter: " +	', '.join(self._categories)
-			
-		html_output = html_template.format(html=html, 
-			title=titlestr, 
-			priority_filter= priority_filter_str,
-			secondary_filter = secondary_filter_str )
-		
-		return html_output
-		
-	##########################################################################################		
+        dates= self.split_daterange_into_days(from_date, to_date)
+        for date in dates:
+            publications= self.fetch_from_db(date)
+            if len(publications) > 0:
+                all_publications.extend(publications)
+            else:
+                publications=self.fetch_from_server(date)
+                if len(publications) > 0:
+                    all_publications.extend(publications)
+        
+        return all_publications
+    
 
-		
-	def get_output_filename(self, format="html"):
-		enddate = self._end_date.replace("-", "")
-		fromdate =  self._from_date.replace("-", "")
-		return f"{enddate}_{fromdate}_MedRxiv.{format}"
-	
-		
 
-	##########################################################################################		
-		
-		
+class MedrXivAssistant:
+    """A class to assist with the medrXiv scraper"""
+    def __init__(self, callback_notification=print, tqdm=tqdm):
+        """initializes the MedrXivAssistant
+        :param callback_notification: a callback function to notify the user of progress. If None, no notification is given.
+            if provided, the function should take a string as an argument and display it to the user.
+        :param tqdm: a tqdm object to display progress bars. If None, no progress bars are displayed.
+        """
+        self.callback_notification = callback_notification
+        self.tqdm=tqdm
+        self.scraper = MedrXivScraper()
+       
 
-if __name__ == "__main__":
-	# Example usage of the medrxiv_scraper class
-	
-	end_date = datetime.now().strftime("%Y-%m-%d")	#today
-	how_many_days_past = 2
-	start_date = (datetime.strptime(end_date, '%Y-%m-%d')-timedelta(days=how_many_days_past)).strftime('%Y-%m-%d')
-	
-	keywords = ["GPT4", "machine learning", "deep learning", "large language model", "LLM", "Anthropic", "OpenAI", "Artifical Intelligence"]
-	
-	scraper = MedrXivScraper(from_date=start_date, end_date=end_date, llm=completion, summarize=True)
-	scraper.set_keywords(keywords)
-	
-	publications = scraper.fetch_medrxiv_publications()
-	
-	# Optionally, save the results to a file
-	#with open('new_medrxiv_publications.json', 'w') as f:
-		#json.dump(publications, f, indent=4)
-	
-	fname = scraper.get_output_filename('html')
-	with open(fname, 'w') as f:
-		f.write(scraper.list_abstracts(publications, format="html"))
-	try:
-		webbrowser.open('file://' + os.path.realpath(fname))
-	except:
-		print(f"unable to launch web browser to open {fname}")
+    def analyze_publication(self, publication: dict, fetch_pdf=False) -> dict:
+        """analyzes a publication and adds
+        - a summary of the publication
+        - a list of keywords
+        - a critique of the study
+        - the full pdf file if available
+        :param publication: the publication in the form of a dictionary
+        :return: the publication with additional analysis information
+        """
+        self.callback_notification(f"Analyzing publication {publication['title']}")
+        if fetch_pdf:
+            publication['pdf_path'] = self.scraper.fetch_pdf_from_publication(publication)
+            #publication['critique'] = self.critique_study_fulltext(publication)
+
+        publication['summary'] = self.summarize_publication(publication)
+        publication['keywords'] = self.extract_keywords(publication)
+        #publication['abstract_critique'] = self.critique_study_abstract(publication)
+        
+        #update the database with the new information
+        self.scraper.db.update(publication, doc_ids=[publication.doc_id])
+        return publication
+    
+    def summarize_publication(self, publication: dict, commit=False) -> str:
+        """summarizes a publication
+        :param publication: the publication in the form of a dictionary
+        :param commit: if True, updates the publication in the database with the summary
+        :return: a summary of the publication
+        """
+        self.callback_notification(f"Summarizing publication {publication['title']}")
+        summarizer = Summarizer()
+        publication['summary'] = summarizer.summarize(publication['abstract'], n_sentences=3)
+        if commit:
+            self.scraper.db.update(publication, doc_ids=[publication.doc_id])
+        return publication['summary']
+    
+    def extract_keywords(self, publication: dict, commit=False) -> list[str]:
+        """extracts keywords from a publication
+        :param publication: the publication in the form of a dictionary
+        :param commit: if True, updates the publication in the database with the keywords
+        :return: a list of keywords
+        """
+        extractor= KeywordExtractor()
+        publication['keywords'] = extractor.extract_keywords(publication['abstract'])
+        if commit:
+            self.scraper.db.update(publication, doc_ids=[publication.doc_id])
+        return publication['keywords']
+    
+    def summarize_all_abstracts(self):
+        """summarizes all publications in the database"""
+        for publication in self.tqdm(self.scraper.db, desc="Summarizing abstracts"):
+            publication = self.summarize_publication(publication, commit=True)
+            
+
+    def keywords_for_all_abstracts(self):
+        """extracts keywords from all publications in the database"""
+        for publication in self.tqdm(self.scraper.db, desc="Extracting keywords"):
+            publication = self.extract_keywords(publication, commit=True)
+            
+            
+
+
+if __name__=="__main__":
+    #scraper = MedrXivScraper()
+    #documents = scraper.fetch_medrxiv_papers('2024-05-01', '2024-05-27')
+    #print(f"Retrieved {len(documents)} publications")
+    assistant = MedrXivAssistant()
+    #assistant.summarize_all_abstracts()
+    assistant.keywords_for_all_abstracts()

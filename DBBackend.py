@@ -15,7 +15,7 @@ class DataBase(TinyDB):
 
     def Query(self):
         return Query()
-    
+     
     def get_by_substring(self, substring, field):
         return self.search(Query()[field].matches('.*{}.*'.format(substring), flags=re.IGNORECASE))
 
@@ -23,6 +23,8 @@ class DataBase(TinyDB):
 class DBMedrXiv(DataBase):
     def __init__(self, url='medrxiv.json', path_to_db='./data'):
         super().__init__(url, path_to_db)
+        self.url=url
+        print(f"DBMedrXiv: {self.url}")
 
 
 class DBResearch(DataBase): 
