@@ -3,9 +3,10 @@ import os
 import requests
 from datetime import datetime, timedelta
 from tqdm import tqdm
+from time import sleep
 from Summarizer import Summarizer
 from KeywordExtractor import KeywordExtractor
-
+from StudyCritique import StudyCritique
 
 class MedrXivScraper:
     """fetches and caches publications from medrXiv"""
@@ -51,6 +52,7 @@ class MedrXivScraper:
         return results
     
     
+
     def fetch_from_db_by_doi(self, doi: str) -> dict:
         """fetches publications from the database for a given doi
         :param doi: the doi of the publication
@@ -64,6 +66,7 @@ class MedrXivScraper:
         else:
             return None
     
+
 
     def fetch_from_server(self, date: str) -> list[dict]:
         """fetches publications from the medrXiv server for a given date
@@ -99,6 +102,7 @@ class MedrXivScraper:
         self.callback_notification(f"inserted {len(results)} into database")
         return publications
 
+
     
     def get_pdf_url(self, publication : dict) -> str:
         """creates a URL for full PDF download from a retrieved publication
@@ -109,7 +113,8 @@ class MedrXivScraper:
         pdf_url = f"https://www.medrxiv.org/content/{publication['doi']}.full.pdf"
         return(pdf_url)
     
-    
+
+
     def fetch_pdf_from_publication(self, publication: dict, path: str = "./library") -> str:
         """downloads the PDF of a publication to a given path
         :param publication: a publication in the form of a dictionary
@@ -123,12 +128,19 @@ class MedrXivScraper:
         
         #is the file already in our library?
         if os.path.isfile(pdf_path):
+            if 'pdf_path' not in publication:
+                publication['pdf_path'] = pdf_path
+                self.db.update(publication, doc_ids=[publication.doc_id])   
             self.callback_notification(f"PDF already exists at {pdf_path}")
             return pdf_path
         
         #fetch the pdf
         self.callback_notification(f"Attempting to fetch PDF from {pdf_url}")
-        response = requests.get(pdf_url)
+        try:
+            response = requests.get(pdf_url)
+        except Exception as e:
+            self.callback_notification(f"Failed to fetch PDF from {pdf_url}: {e}")
+            return None
         if response.status_code != 200:
             self.callback_notification(f"Failed to fetch PDF from {pdf_url}. Status code: {response.status_code}")
             return None
@@ -140,8 +152,42 @@ class MedrXivScraper:
             self.db.update(publication, doc_ids=[publication.doc_id])    
         return pdf_path
     
+    
 
-    def fetch_medrxiv_papers(self, from_date: str, to_date: str) -> list[dict]: 
+    def fetch_all_missing_pdfs(self, publications=None):
+        """fetches all missing PDFs for publications in the database
+        :param publications: a list of publications to fetch PDFs for. If None, fetches PDFs for all publications in the database
+        """
+        if publications is None:
+            publications = self.db
+        for publication in self.tqdm(publications, desc="Fetching missing PDFs"):
+            if 'pdf_path' not in publication:
+                result = self.fetch_pdf_from_publication(publication)
+                if result is not None: #a pdf has been downloaded, wait a bit before fetching the next one
+                    sleep(3) #don't hammer the medrXiv server needlessly
+
+
+
+    def exclude_duplicates(self, publications: list[dict]) -> list[dict]:
+        """excludes duplicate publications from a list of publications
+        :param publications: a list of publications in the form of dictionaries
+        :return: a list of publications with duplicates (records already in database) removed
+        """
+        duplicates=0
+        unique_publications = []
+        qpub = self.db.Query()
+        for publication in publications:
+            if db.search(qpub.doi==publication['doi']):
+                #this publication already exists in utr database, skip it
+                duplicates+=1
+                continue
+            unique_publications.append(publication)
+        self.callback_notification(f"Excluded {duplicates} duplicates")
+        return unique_publications
+    
+
+
+    def fetch_medrxiv_papers(self, from_date: str, to_date: str, keywords=[]) -> list[dict]: 
         """Fetches publications from medrXiv for the given time span between from_date and to_date.
         ReturnsGets the publications them from cache if they have been fetched before, otherwise fetches them from the internet.
         Publications are saved to a local file for future use, as well as inserted into the caching database.
@@ -176,14 +222,49 @@ class MedrXivScraper:
             else:
                 publications=self.fetch_from_server(date)
                 if len(publications) > 0:
-                    all_publications.extend(publications)
-        
+                    publications = self.exclude_duplicates(publications)
+                    all_publications.extend(publications)  #save them , in case something hgoes wrong during analysis or fetching pdfs
+                    for publication in publications: #get the pdfs
+                        publication['pdf_path'] = self.fetch_pdf_from_publication(publication)
+        if len(keywords)>0:   
+            all_publications = [publication for publication in all_publications if any(keyword in publication['abstract'] for keyword in keywords)]            
+
         return all_publications
+    
+    def fetch_publications_by_keywords(self, keywords: list[str]) -> list[dict]:
+        """fetches publications from medrXiv based on a list of keywords
+        :param keywords: a list of keywords
+        :return: a list of publications in the form of dictionaries
+        """
+        #Publication=self.db.Query()
+        #publications = self.db.search(Publication.keywords.any(keywords))
+        publications=self.db.case_insensitive_search('abstract', keywords)
+        return publications
+
+
+
+    def list_abstracts(self, publications: list[dict], format="markdown") -> str:
+        """lists the abstracts of publications in a human-readable format
+        :param publications: a list of publications in the form of dictionaries
+        :param format: the format to return the abstracts in. Can be 'markdown' or 'html'
+        :return: a string with the abstracts
+        """
+        if format == "markdown":
+            abstracts = "\n".join([f"### {publication['title']}\n{publication['abstract']}" for publication in publications])
+        elif format == "html":
+            abstracts = "\n".join([f"<h3>{publication['title']}</h3><p>{publication['abstract']}</p>" for publication in publications])
+        return abstracts
     
 
 
+
+
+
 class MedrXivAssistant:
-    """A class to assist with the medrXiv scraper"""
+    """A class to assist with the medrXiv scraper
+    The assistant can summarize publications, extract keywords, and critique studies
+    The stored publications fetched from medrXiv are updated with the new information"""
+
     def __init__(self, callback_notification=print, tqdm=tqdm):
         """initializes the MedrXivAssistant
         :param callback_notification: a callback function to notify the user of progress. If None, no notification is given.
@@ -195,13 +276,16 @@ class MedrXivAssistant:
         self.scraper = MedrXivScraper()
        
 
-    def analyze_publication(self, publication: dict, fetch_pdf=False) -> dict:
+    def analyze_publication(self, publication: dict, fetch_pdf=False, commit=True, force=False) -> dict:
         """analyzes a publication and adds
         - a summary of the publication
         - a list of keywords
         - a critique of the study
         - the full pdf file if available
         :param publication: the publication in the form of a dictionary
+        :param fetch_pdf: if True, fetches the full PDF of the publication
+        :param commit: if True, updates the publication in the database with the new information
+        :param force: if True, forces the analysis to be done even if the publication already has the information
         :return: the publication with additional analysis information
         """
         self.callback_notification(f"Analyzing publication {publication['title']}")
@@ -209,57 +293,129 @@ class MedrXivAssistant:
             publication['pdf_path'] = self.scraper.fetch_pdf_from_publication(publication)
             #publication['critique'] = self.critique_study_fulltext(publication)
 
-        publication['summary'] = self.summarize_publication(publication)
-        publication['keywords'] = self.extract_keywords(publication)
-        #publication['abstract_critique'] = self.critique_study_abstract(publication)
+        # for better performance, do not commit the changes to the database until all analyses are done
+        publication['summary'] = self.summarize_publication(publication, commit=False, force=force)
+        publication['keywords'] = self.extract_keywords(publication, commit=False, force=force)
+        publication['abstract_critique'] = self.critique_study_abstract(publication, commit=False, force=force)
         
         #update the database with the new information
-        self.scraper.db.update(publication, doc_ids=[publication.doc_id])
+        if commit:
+            self.scraper.db.update(publication, doc_ids=[publication.doc_id])
         return publication
     
-    def summarize_publication(self, publication: dict, commit=False) -> str:
-        """summarizes a publication
+    def summarize_publication(self, publication: dict, commit=True, force=False) -> str:
+        """summarizes a publication's abstract
         :param publication: the publication in the form of a dictionary
         :param commit: if True, updates the publication in the database with the summary
-        :return: a summary of the publication
+        :param force: if True, forces the summary to be done even if the publication already has a summary
+        :return: the publication, with the summary added
         """
-        self.callback_notification(f"Summarizing publication {publication['title']}")
+        self.callback_notification(f"Summarizing abstract of [publication ]{publication['title']}]")
+        if 'summary' in publication and len(publication['summary']>0) and not force: #summary already exists
+            return publication['summary']
         summarizer = Summarizer()
         publication['summary'] = summarizer.summarize(publication['abstract'], n_sentences=3)
         if commit:
             self.scraper.db.update(publication, doc_ids=[publication.doc_id])
-        return publication['summary']
+        return publication
     
-    def extract_keywords(self, publication: dict, commit=False) -> list[str]:
+    def extract_keywords(self, publication: dict, commit=True, force=False) -> list[str]:
         """extracts keywords from a publication
         :param publication: the publication in the form of a dictionary
         :param commit: if True, updates the publication in the database with the keywords
-        :return: a list of keywords
+        :param force: if True, forces the keywords to be extracted even if the publication already has keywords
+        :return: publication updated with a list of keywords
         """
         extractor= KeywordExtractor()
+        if 'keywords' in publication and len(publication['keywords']>0) and not force: #keywords already exist
+            return publication['keywords']
         publication['keywords'] = extractor.extract_keywords(publication['abstract'])
         if commit:
             self.scraper.db.update(publication, doc_ids=[publication.doc_id])
-        return publication['keywords']
+        return publication
     
-    def summarize_all_abstracts(self):
-        """summarizes all publications in the database"""
-        for publication in self.tqdm(self.scraper.db, desc="Summarizing abstracts"):
-            publication = self.summarize_publication(publication, commit=True)
+    def critique_study_abstract(self, publication: dict, commit=True, force=False) -> str:
+        """critiques the abstract of a publication
+        :param publication: the publication in the form of a dictionary
+        :param commit: if True, updates the publication in the database with the critique
+        :param force: if True, forces the critique to be done even if the publication already has a critique
+        :return: publicatin updated with a critique of the abstract
+        """
+        critique = StudyCritique()
+        if 'abstract_critique' in publication and len(publication['abstract_critique']>0) and not force: #critique already exists
+            return publication['abstract_critique']
+        publication['abstract_critique'] = critique.critique(publication['abstract'])
+        if commit:
+            self.scraper.db.update(publication, doc_ids=[publication.doc_id])
+        return publication
+    
+    def summarize_all_abstracts(self, publications=None, force=False):
+        """summarizes all publications in the database and commits the summaries to the database
+        :param publications: a list of publications to summarize. If None, summarizes all publications in the database
+        :param force: if True, forces the summaries to be done even if the publications already have summaries
+        """
+        if publications == None:
+            publications = self.scraper.db #use the whole database
+        for publication in self.tqdm(publications, desc="Summarizing abstracts"):
+            publication = self.summarize_publication(publication, commit=True, force=force)
             
 
-    def keywords_for_all_abstracts(self):
-        """extracts keywords from all publications in the database"""
-        for publication in self.tqdm(self.scraper.db, desc="Extracting keywords"):
-            publication = self.extract_keywords(publication, commit=True)
+    def keywords_for_all_abstracts(self, publications=None, force=False):
+        """extracts keywords from all publications in either the parameter publications, else 
+        in the whole database and commits them to the database
+        :param publications: a list of publications to extract keywords from. If None, extracts keywords from the whole database
+        :param force: if True, forces the keywords to be extracted even if the publications already have keywords
+        """
+        if publications == None:
+            publications = self.scraper.db #use the whole database
+        for publication in self.tqdm(publications, desc="Extracting keywords"):
+            publication = self.extract_keywords(publication, commit=True, force=force)
+
+    def critique_all_abstracts(self, publications=None, force=False):
+        """critiques all abstracts in the parameter publications or else in the whole database and commits the critiques to the database
+        :param publications: a list of publications to critique. If None, critiques all publications in the database
+        :param force: if True, forces the critiques to be done even if the publications already have critiques
+        """
+        if publications == None:
+            publications = self.scraper.db #use the whole database
+        for publication in self.tqdm(publications, desc="Creating critique for abstracts"):
+            publication = self.critique_study_abstract(publication, commit=True, force=force)
+
+    def update_missing_data(self):
+        """updates missing data for all publications in the database"""
+        db = self.scraper.db
+        q=db.Query()
+        missing_abstract_critiques = db.search(~q.abstract_critique.exists())
+        if len(missing_abstract_critiques) > 0:
+            self.callback_notification(f"Found {len(missing_abstract_critiques)} publications with missing abstract critiques")
+            self.critique_all_abstracts(publications=missing_abstract_critiques)
+        
+        missing_summaries = db.search(~q.summary.exists())  
+        if len(missing_summaries) > 0:
+            self.callback_notification(f"Found {len(missing_summaries)} publications with missing summaries")
+            self.summarize_all_abstracts(publications=missing_summaries)
+        
+        missing_keywords = db.search(~q.keywords.exists())
+        if len(missing_keywords) > 0:
+            self.callback_notification(f"Found {len(missing_keywords)} publications with missing keywords")
+            self.keywords_for_all_abstracts(publications=missing_keywords)
+
+        missing_pdfs = db.search(~q.pdf_path.exists())
+        if len(missing_pdfs) > 0:
+            self.callback_notification(f"Found {len(missing_pdfs)} publications with missing PDFs")
+            self.scraper.fetch_all_missing_pdfs(publications=missing_pdfs)
             
             
 
 
 if __name__=="__main__":
     #scraper = MedrXivScraper()
-    #documents = scraper.fetch_medrxiv_papers('2024-05-01', '2024-05-27')
+    #documents = scraper.fetch_medrxiv_papers('2024-05-28', '2024-05-28')
     #print(f"Retrieved {len(documents)} publications")
+    #scraper.fetch_all_missing_pdfs()
     assistant = MedrXivAssistant()
+    assistant.update_missing_data()
+    #assistant.critique_all_abstracts()
     #assistant.summarize_all_abstracts()
-    assistant.keywords_for_all_abstracts()
+    #assistant.keywords_for_all_abstracts()
+    

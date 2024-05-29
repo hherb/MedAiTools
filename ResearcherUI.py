@@ -92,4 +92,7 @@ template = pn.template.FastListTemplate(
 template.main.append(
     notebook
 )
-template.servable();
+
+if __name__ == '__main__':
+    template.servable()
+    pn.serve(template)

@@ -13,6 +13,15 @@ class DataBase(TinyDB):
         #     print(f"Directory {path_to_db} already exists")
         # self.db = TinyDB(url)
 
+    # Function to perform case-insensitive search
+    def case_insensitive_search(self, field, keywords):
+        query = Query()
+        results = []
+        for keyword in keywords:
+            # Add the results of each keyword search to the results list
+            results.extend(self.search(query[field].test(lambda value: keyword.lower() in value.lower())))
+        return results
+
     def Query(self):
         return Query()
      
