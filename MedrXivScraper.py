@@ -177,7 +177,7 @@ class MedrXivScraper:
         unique_publications = []
         qpub = self.db.Query()
         for publication in publications:
-            if db.search(qpub.doi==publication['doi']):
+            if self.db.search(qpub.doi==publication['doi']):
                 #this publication already exists in utr database, skip it
                 duplicates+=1
                 continue
@@ -187,7 +187,7 @@ class MedrXivScraper:
     
 
 
-    def fetch_medrxiv_papers(self, from_date: str, to_date: str, keywords=[]) -> list[dict]: 
+    def fetch_medrxiv_publications(self, from_date: str, to_date: str, keywords=[]) -> list[dict]: 
         """Fetches publications from medrXiv for the given time span between from_date and to_date.
         ReturnsGets the publications them from cache if they have been fetched before, otherwise fetches them from the internet.
         Publications are saved to a local file for future use, as well as inserted into the caching database.
@@ -303,6 +303,20 @@ class MedrXivAssistant:
             self.scraper.db.update(publication, doc_ids=[publication.doc_id])
         return publication
     
+    def analyze_publications(self, publications: list[dict], fetch_pdf=True, commit=True, force=False) -> list[dict]:
+        """analyzes a list of publications
+        :param publications: a list of publications in the form of dictionaries
+        :param fetch_pdf: if True, fetches the full PDF of the publication
+        :param commit: if True, updates the publication in the database with the new information
+        :param force: if True, forces the analysis to be done even if the publication already has the information
+        :return: the publications with additional analysis information
+        """
+        analyzed_publications = []
+        for publication in self.tqdm(publications, desc="Analyzing publications"):
+            analyzed_publication = self.analyze_publication(publication, fetch_pdf=fetch_pdf, commit=commit, force=force)
+            analyzed_publications.append(analyzed_publication)
+        return analyzed_publications
+    
     def summarize_publication(self, publication: dict, commit=True, force=False) -> str:
         """summarizes a publication's abstract
         :param publication: the publication in the form of a dictionary
@@ -311,7 +325,7 @@ class MedrXivAssistant:
         :return: the publication, with the summary added
         """
         self.callback_notification(f"Summarizing abstract of [publication ]{publication['title']}]")
-        if 'summary' in publication and len(publication['summary']>0) and not force: #summary already exists
+        if 'summary' in publication and len(publication['summary'])>0 and not force: #summary already exists
             return publication['summary']
         summarizer = Summarizer()
         publication['summary'] = summarizer.summarize(publication['abstract'], n_sentences=3)
@@ -327,7 +341,7 @@ class MedrXivAssistant:
         :return: publication updated with a list of keywords
         """
         extractor= KeywordExtractor()
-        if 'keywords' in publication and len(publication['keywords']>0) and not force: #keywords already exist
+        if 'keywords' in publication and len(publication['keywords'])>0 and not force: #keywords already exist
             return publication['keywords']
         publication['keywords'] = extractor.extract_keywords(publication['abstract'])
         if commit:
@@ -342,7 +356,7 @@ class MedrXivAssistant:
         :return: publicatin updated with a critique of the abstract
         """
         critique = StudyCritique()
-        if 'abstract_critique' in publication and len(publication['abstract_critique']>0) and not force: #critique already exists
+        if 'abstract_critique' in publication and len(publication['abstract_critique'])>0 and not force: #critique already exists
             return publication['abstract_critique']
         publication['abstract_critique'] = critique.critique(publication['abstract'])
         if commit:

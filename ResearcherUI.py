@@ -21,6 +21,7 @@ import sys
 
 from Researcher import research
 from MedrXivPanel import MedrXivPanel 
+from RAG_UI import PDFPanel
 from medai.tools.apikeys import load_api_keys  
 
 
@@ -41,8 +42,12 @@ def get_response(contents, user, instance):
     notebook.active = 0 #research assistant tab
     return response
 
+def pdf2RAG(pdf):
+    pdf_panel.set_pdf(pdf)
+    notebook.active = 2 #interrogate tab
+    return "PDF loaded into Research Assistant"
 
-medrxiv_panel = MedrXivPanel()
+medrxiv_panel = MedrXivPanel(pdf2RAG=pdf2RAG)
 critique_panel = pn.pane.HTML("<html>Critique of study:</html>", sizing_mode='stretch_both')
 
 terminal = pn.widgets.Terminal(
@@ -71,10 +76,15 @@ research_assistant_panel= pn.Row(
         sizing_mode='stretch_both'
 )
 
+pdf_panel=PDFPanel()
+
+
+
+
 notebook = pn.Tabs(('Research Assistant', research_assistant_panel),
                    ('MedrXiv News', medrxiv_panel), 
                    #('Chat', chat_panel), 
-                   ('Critique', critique_panel), 
+                   ('Interrogate', pdf_panel), 
                    ('Debug', terminal),
                    margin=8, sizing_mode='stretch_both'
 )

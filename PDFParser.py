@@ -24,6 +24,7 @@ to convert PDF files to markdown text. The wrapper allows to later change the un
 conversion service without having to change further source code depnding on this module 
 """
 
+import os
 from llama_parse import LlamaParse
 from weasyprint import HTML
 import markdown
@@ -60,16 +61,51 @@ class PDFParser():
         parsed = self.parser.load_data(file_path)
         return parsed[0].text
 
+# if __name__ == "__main__":
+#     import sys
+#     import asyncio
+
+#     if len(sys.argv) != 2:
+#         print("Usage: python PDFParser.py <pdf_file>")
+#         sys.exit(1)
+#     # Create an event loop
+#     loop = asyncio.get_event_loop()
+#     pdf_file = sys.argv[1]
+#     parser = PDFParser()
+#     markdown_text = loop.run_until_complete(parser.aparse(pdf_file))
+#     #print(markdown_text)
+#     with open(f"{os.path.basename(pdf_file)}.md", "w") as f:
+#         f.write(markdown_text)
+
+def pdfs2md(pdf_directory: str, maxnum=50):
+    """Convert all PDF files in a directory to markdown"""
+    parser = PDFParser()
+    i=0
+    for pdf_file in os.listdir(pdf_directory):
+        if not pdf_file.endswith(".pdf"):
+            continue
+        print(f"Converting {pdf_file} to markdown")
+        filepath = os.path.join(pdf_directory, pdf_file)
+        mdpath = f"{filepath}.md"
+        if os.path.exists(mdpath):
+            print(f"{mdpath} already exists, skipping")
+            continue
+        markdown_text = parser.parse(filepath)
+        with open(f"{filepath}.md", "w") as f:
+            f.write(markdown_text)
+            i+=1
+            if i>=maxnum:
+                return i
+
 if __name__ == "__main__":
     import sys
     import asyncio
 
     if len(sys.argv) != 2:
-        print("Usage: python PDFParser.py <pdf_file>")
+        print("Usage: python PDFParser.py <pdf_directory> - all pdfs in the directory will be converted to markdown")
         sys.exit(1)
     # Create an event loop
     loop = asyncio.get_event_loop()
-    pdf_file = sys.argv[1]
-    parser = PDFParser()
-    markdown_text = loop.run_until_complete(parser.aparse(pdf_file))
-    print(markdown_text)
+    pdf_directory = os.path.abspath(sys.argv[1])
+    print(f"Converting all PDF files in {pdf_directory} to markdown")
+    pdfs2md(pdf_directory)

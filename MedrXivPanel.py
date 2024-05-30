@@ -24,7 +24,8 @@ from panel.widgets import Tqdm
 import datetime as dt
 import html
 import json
-from MedrXivScraper import MedrXivScraper
+from functools import partial
+from MedrXivScraper import MedrXivScraper, MedrXivAssistant
 
 pn.extension('texteditor', loading_indicator=True, design="material")
 
@@ -65,10 +66,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 class MedrXivPanel(pn.viewable.Viewer):
     """A HTML panel displaying publications fetched from medrXiv"""
 
-    def __init__(self):    
+    def __init__(self, pdf2RAG=None):
+        """
+        The `MedrXivPanel` class provides a Panel app (web GUI) to fetch and display publications from
+        medrXiv. The app allows users to specify date ranges and keywords for fetching publications and
+        provides options to read abstracts, critiques, and download and access full PDFs.
+
+        :param pdf2RAG: The `pdf2RAG` parameter in the `MedrXivPanel` class is a UI callback
+        """    
         
+        self.pdf2RAG=pdf2RAG
         self.keywordlist = ["GPT4", "machine learning", "deep learning", "large language model", "LLM", "Anthropic", "OpenAI", "Artifical Intelligence"]
-        self.html_panel = pn.pane.HTML("<html>Hit 'Fetch' button ...", 
+        self.html_panel = pn.panel("<html>Hit 'Fetch' button ...", 
                                        name='MedrXiv Publications', 
                                        sizing_mode='stretch_both')
         
@@ -83,8 +92,10 @@ class MedrXivPanel(pn.viewable.Viewer):
         self.date_range_picker = pn.widgets.DateRangePicker(name='Date Range', value=(start_date, end_date))
         self.keywords= pn.widgets.TextInput(name='Keywords', value=', '.join(self.keywordlist), align=('center'), sizing_mode='stretch_width')
         self.heading= pn.pane.Markdown("## Your MedrXiv publications (not fetched yet)", sizing_mode='stretch_width')
+        self.display_column=pn.Column()
+        #self.display_panel = pn.panel(self.display_column, sizing_mode='stretch_both')
         self.panel = pn.Column(self.heading, 
-                                pn.Column(self.html_panel, scroll=True, sizing_mode='stretch_both'),
+                                pn.Column(self.display_column, scroll=True, sizing_mode='stretch_both'),
                                 pn.Row(self.keywords, self.search_btn),
                                 pn.Row(self.date_range_picker, self.fetch_btn),
                                 sizing_mode='stretch_both')
@@ -119,17 +130,31 @@ class MedrXivPanel(pn.viewable.Viewer):
         """Fetch publications from medrXiv and display them in the panel"""
 
         # Fetch publications
-        scraper = MedrXivScraper()
+        scraper = MedrXivScraper(tqdm=Tqdm()) 
         
         self.set_heading(from_date="not specified", to_date="", keywords=self.keywords.value)
         #self.html_panel.object = "<html><p>Fetching and analysing publications, this might take a while ...</p></html>"
         #scraper.set_category(self, categories=["Emergency Medicine", ], priority=True)
         publications = scraper.fetch_publications_by_keywords(keywords=self.keywords.value.split(',') )
-        
+        self.display_publications(publications)
+
+    def open_pdf(self, pdf_path, event):
+        if self.pdf2RAG is not None:
+            self.pdf2RAG(pdf_path)
+        print(f"Opening PDF: {pdf_path}")    
+
+    def display_publications(self, publications: dict):
+        """
+        The function displays the fetched publications in a panel with detailed information and provides
+        options to read abstracts, critiques, and access full PDFs.
+        :param publications:   a medrXiv publication dictionary
+        """
         # Update the panel with the fetched publications
         #self.html_panel.object = scraper.list_abstracts(publications, format="html")
-        html=""
+        display_widgets=[]
+        self.display_column.clear()
         for publication in publications:
+            html=""
             #pdfurl = scraper.get_pdf_URL(publication)
             html+="""<div style="border:1px solid black; border-radius: 10px; padding: 10px; background-color: #ebf0fa;">"""
             html+=f"""<h3>{publication['title']}</h3>"""
@@ -140,14 +165,29 @@ class MedrXivPanel(pn.viewable.Viewer):
                     <div class="abstract" style="display:none;"><p>{publication['abstract']}</p></div>
                     <button onclick="toggleCritique(this)"> Read Critique </button>
                     <div class="abstract" style="display:none;"><p>{publication['abstract_critique']}</p></div>"""
-                    #<a href="{pdfurl}" target="_blank"> <button onclick=="${self._pdf_click}"> Full PDF </button></a>"""
-                    #<button onclick="${self._pdf_click}"> Full PDF </button>"""
-                    
             html+="</div>"
             html+="<br>"
-        htmlpage = HTML_TEMPLATE.format(html=html)
-        self.html_panel.object = htmlpage
-
+            htmlpage = HTML_TEMPLATE.format(html=html)
+            htmlpane = pn.pane.HTML(htmlpage)
+                    
+            if 'pdf_path' in publication:
+                pdf_path=publication['pdf_path']
+            else:
+                try:
+                    info=pn.state.notifications.info('Attempting to fetch the PDF from the internet...', duration=0)
+                    pdf_path = scraper.fetch_pdf_from_publication(publication)
+                    info.destroy()
+                except:
+                    info.destroy()
+                    info= pn.state.notifications.info('Failed to locate PDF, and failed to retrieve it from the internet', duration=10)
+                    pdf_path=""
+             # Define a callback function that takes the pdf_path as a parameter
+            btn = pn.widgets.Button(name=f"Read full paper", button_type='primary', width=60, margin=25)
+            btn.on_click(partial(self.open_pdf, pdf_path))
+            display_widgets.append(pn.Column(htmlpane, btn))
+        scrollable_panel = pn.Column(*display_widgets, scroll=True) 
+        self.display_column.append(scrollable_panel)
+        
 
 
     def fetch_publications(self, event):
@@ -165,36 +205,16 @@ class MedrXivPanel(pn.viewable.Viewer):
         # Fetch publications
         start_date, end_date = self.date_range_picker.value
         scraper = MedrXivScraper()
-        
-        self.set_heading(from_date=start_date.strftime("%Y-%m-%d"), to_date=end_date.strftime("%Y-%m-%d"), keywords=self.keywords.value)
+        assistant = MedrXivAssistant()
+        from_date=start_date.strftime("%Y-%m-%d")
+        to_date=end_date.strftime("%Y-%m-%d")
+        self.set_heading(from_date=from_date, to_date=to_date, keywords=self.keywords.value)
         self.html_panel.object = "<html><p>Fetching and analysing publications, this might take a while ...</p></html>"
         #scraper.set_category(self, categories=["Emergency Medicine", ], priority=True)
-        publications = scraper.fetch_medrxiv_publications(start_date=start_date, end_date=end_date, keywords=self.keywords.value.split(',') )
-        
-        # Update the panel with the fetched publications
-        #self.html_panel.object = scraper.list_abstracts(publications, format="html")
-        html=""
-        for publication in publications:
-            #pdfurl = scraper.get_pdf_URL(publication)
-            html+="""<div style="border:1px solid black; border-radius: 10px; padding: 10px; background-color: #ebf0fa;">"""
-            html+=f"""<h3>{publication['title']}</h3>"""
-            html+=f"""{publication['authors']} {publication['date']}"""
-            html+="<hr>"
-            html+=f"""<p>{publication['summary']}</p>"""
-            html+=f"""<button onclick="toggleAbstract(this)"> Read Abstract </button>
-					<div class="abstract" style="display:none;"><p>{publication['abstract']}</p></div>
-					<button onclick="toggleCritique(this)"> Read Critique </button>
-					<div class="abstract" style="display:none;"><p>{publication['abstract_critique']}</p></div>"""
-                    #<a href="{pdfurl}" target="_blank"> <button onclick=="${self._pdf_click}"> Full PDF </button></a>"""
-				    #<button onclick="${self._pdf_click}"> Full PDF </button>"""
-                    
-            html+="</div>"
-            html+="<br>"
-        htmlpage = HTML_TEMPLATE.format(html=html)
-        self.html_panel.object = htmlpage
+        publications = scraper.fetch_medrxiv_publications(from_date=from_date, to_date=to_date, keywords=self.keywords.value.split(',') )
+        publications=assistant.analyze_publications(publications)
+        self.display_publications(publications)  
 
-    def _pdf_click(self, event):
-        print("PDF clicked")
         
 
     def __panel__(self):
