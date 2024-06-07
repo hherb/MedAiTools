@@ -25,6 +25,7 @@ class PDFPanel(pn.viewable.Viewer):
 
     def __init__(self, dummypdf="pdf_sample.pdf"):       
         self.pdf=dummypdf
+        self.displayed_pdf=None #the currently displayed pdf file
         self.RAG=RAG()
         self.setup_panels()
 
@@ -36,8 +37,9 @@ class PDFPanel(pn.viewable.Viewer):
         self.pdf_pane = pn.pane.PDF(self.pdf, start_page=1, sizing_mode='stretch_both', embed=True)
         self.file_input = pn.widgets.FileInput(accept=".pdf", sizing_mode='stretch_width')
         self.file_input.param.watch(self.update_pdf, 'value') 
+        self.check_all_documents=pn.widgets.Checkbox(name="Interrogate all documents", value=False)
 
-        self.pdf_panel=pn.Column(self.pdf_pane, self.file_input, margin=10, sizing_mode='stretch_both' )
+        self.pdf_panel=pn.Column(self.pdf_pane, pn.Row(self.file_input, self.check_all_documents), margin=10, sizing_mode='stretch_both' )
         
         self.chat_bot = pn.chat.ChatInterface(callback=self.response, 
                                  user='Me', 
@@ -57,13 +59,27 @@ class PDFPanel(pn.viewable.Viewer):
             filepath="./library/"+self.file_input.filename
             with open(filepath, "wb") as f:
                 f.write(self.file_input.value) 
-                self.set_pdf(filepath)                                                       
+                self.set_pdf(filepath)  
+
                 
 
     def response(self, contents, user, instance):
-      response = self.RAG.query(contents)
-      print(f"[{response}]")
-      return str(response).strip()
+        displayed_pdf=self.displayed_pdf
+        if self.check_all_documents.value:
+            displayed_pdf=None
+        response = self.RAG.query(contents, pdfpath=displayed_pdf)
+        print(f"[{response.response}]")
+        sources=""
+        #print(response.source_nodes[0].id_)
+        # print(response.metadata[id]['file_name'])
+        # print(response.metadata[id])
+        # print(response.source_nodes[0].score)
+        for source in response.source_nodes:
+            id= source.id_
+            sources+=f"{response.metadata[id].get('file_name')}, score: {source.score}<br>"
+        display_response = f"{response.response.strip()}<hr>Source: {sources}"
+        return display_response
+    
     
     def set_pdf(self,filepath):
         """
@@ -72,9 +88,19 @@ class PDFPanel(pn.viewable.Viewer):
             pdf (str): The path to the PDF file
         """   
         self.pdf_pane.object = filepath
-        info= pn.state.notifications.info(f"Ingesting [{filepath}]", duration=0)
-        self.RAG.ingest(filepath)
-        info.destroy()
+        if not self.has_ben_ingested(filepath):
+            info= pn.state.notifications.info(f"Ingesting [{filepath}]", duration=0)
+            self.RAG.ingest(filepath)
+             #record ingestion, so that we do not needlessly keep ingesting the same PDF
+            self.displayed_pdf=filepath
+            self.remember_ingestion(filepath)
+            info.destroy()
+
+    def remember_ingestion(self,filepath):
+        pass
+
+    def has_ben_ingested(self,filepath):
+        return False
 
 if __name__ == "__main__":
     panel= PDFPanel()

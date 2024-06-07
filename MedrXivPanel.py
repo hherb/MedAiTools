@@ -102,17 +102,22 @@ class MedrXivPanel(pn.viewable.Viewer):
 
 
 
-    def set_heading(self, from_date=None, to_date=None, keywords="", domains=""):
-        if from_date is not None and to_date is not None:
-            template= """<div style="background-color:#85a3e0; color:white; border-radius:10px; padding:10px;">
-                <h2>Your MedrXiv reading list for {from_date} - {to_date}</h2>
+    def set_heading(self, title_str= None, from_date=None, to_date=None, keywords="", domains=""):
+        template= """<div style="background-color:#85a3e0; color:white; border-radius:10px; padding:10px;">
+                <h2>Your MedrXiv reading list: {title_str} </h2>
                 </div>"""
-            self.heading.object=(template.format(from_date=from_date, to_date=to_date, keywords=keywords, domains=domains))
+        if title_str is not None:
+            title= template.format(title_str=title_str)
+            print(title)
+            self.heading.object= title
+        elif from_date is not None and to_date is not None:
+            title_str =  f"for {from_date} - {to_date}"
+            self.heading.object=template.format(title_str=title_str)
         else:
             template= """<div style="background-color:#85a3e0; color:white; border-radius:10px; padding:10px;">
                 <h2>Publications found in local archive:</h2>
                 </div>"""       
-        self.heading.object=(template)
+            self.heading.object=(template)
 
 
 
@@ -132,13 +137,18 @@ class MedrXivPanel(pn.viewable.Viewer):
         # Fetch publications
         scraper = MedrXivScraper(tqdm=Tqdm()) 
         
-        self.set_heading(from_date="not specified", to_date="", keywords=self.keywords.value)
+        
         #self.html_panel.object = "<html><p>Fetching and analysing publications, this might take a while ...</p></html>"
         #scraper.set_category(self, categories=["Emergency Medicine", ], priority=True)
         publications = scraper.fetch_publications_by_keywords(keywords=self.keywords.value.split(',') )
+        self.set_heading(title_str = f"{len(publications)} publications found", keywords=self.keywords.value)
         self.display_publications(publications)
 
     def open_pdf(self, pdf_path, event):
+        """
+        This function opens a PDF file, ingests it into the vector store (if not ngested already) 
+        and displays it in the Research Assistant GUI for interrogation.
+        """
         if self.pdf2RAG is not None:
             self.pdf2RAG(pdf_path)
         print(f"Opening PDF: {pdf_path}")    
@@ -147,6 +157,7 @@ class MedrXivPanel(pn.viewable.Viewer):
         """
         The function displays the fetched publications in a panel with detailed information and provides
         options to read abstracts, critiques, and access full PDFs.
+        If the PDF is not available locally, the function attempts to fetch it from the internet.
         :param publications:   a medrXiv publication dictionary
         """
         # Update the panel with the fetched publications
@@ -160,7 +171,12 @@ class MedrXivPanel(pn.viewable.Viewer):
             html+=f"""<h3>{publication['title']}</h3>"""
             html+=f"""{publication['authors']} {publication['date']}"""
             html+="<hr>"
-            html+=f"""<p>{publication['summary']}</p>"""
+            try:
+                html+=f"""<p>{publication['summary']}</p>"""
+            except KeyError:
+                assistant = MedrXivAssistant(tqdm=Tqdm())
+                publication=assistant.summarize_publication(publication, commit=True) 
+                html+=f"""<p>{publication['abstract']}</p>"""
             html+=f"""<button onclick="toggleAbstract(this)"> Read Abstract </button>
                     <div class="abstract" style="display:none;"><p>{publication['abstract']}</p></div>
                     <button onclick="toggleCritique(this)"> Read Critique </button>
