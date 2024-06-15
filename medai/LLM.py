@@ -20,6 +20,7 @@ It will soon be deprecated in favour of something like liteLLM"""
 import os
 import litellm
 from dotenv import load_dotenv
+import logging
 
 LOCAL_LLM_API_BASE="http://localhost:11434/v1"
 LOCAL_DEFAULT_MODEL="openai/MaziyarPanahi/Llama-3-8B-Instruct-32k-v0.1-GGUF"
@@ -29,6 +30,9 @@ LOCAL_LLM_API_KEY="lm_studio"
 OPENAI_API_BASE="https://api.openai.com/v1"
 OPENAI_MULTIMODAL_MODEL="gpt-4o"
 
+# Set the logging level for litellm to ERROR to reduce output
+logging.getLogger('LiteLLM').setLevel(logging.ERROR)
+logging.getLogger('httpx').setLevel(logging.ERROR)
 
 class Model:
     def __init__(self, model=LOCAL_DEFAULT_MODEL, 
@@ -145,7 +149,6 @@ class LLM:
         if self.system_prompt is not None:
             messages.append({"role": "system", "content": self.system_prompt})
         messages.append({"role": "user", "content": f"{prompt}"})
-        model=self.model
         #print(f"Generating from model {model} with prompt {prompt}")
         response = litellm.completion(messages=messages, 
                                   model=self.model.get_model(), 

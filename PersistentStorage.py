@@ -23,15 +23,13 @@ import logging
 import sys
 import time
 from tqdm import tqdm
+from pprint import pprint
 from psycopg_pool import ConnectionPool
 from psycopg import sql, errors
 from psycopg.rows import dict_row
 
 #hack, so that we don't have to explicity import dict_row from psycopg in the calling module (in case our abstraction changes away from psycopg)
 dict_row=dict_row
-
-medrxiv_fields= ['doi', 'title', 'authors', 'author_corresponding', 'author_corresponding_institution', 'date', 'version', 
-                 'type', 'license', 'category', 'jatsxml', 'abstract', 'published', 'server', 'summary', 'keywords', 'pdf_path', 'abstract_critique']
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -166,6 +164,18 @@ class PublicationStorage(PersistentStorage):
         super().__init__(storage_directory=storage_directory, server_url=server_url, min_size=min_size, max_size=max_size, schema_migration_file=schema_migration_file)
 
 
+    def count(self, whereclause=None):
+        """
+        Get the number of publications stored in the database
+        :return: int, the number of publications stored in the database
+        """
+        query = "SELECT COUNT(*) FROM medrxiv;"
+        if whereclause:
+            query = f"{query} {whereclause}"
+        with self.connection() as conn:
+            cursor = conn.execute(query)
+            result = cursor.fetchone()
+        return result[0]
 
 
     def file_is_ingested(self, filename):
@@ -182,19 +192,17 @@ class PublicationStorage(PersistentStorage):
         return result[0]
     
 
-
-    def latest_stored(self, from_which_server="medrxiv"):
+    def latest_stored(self, from_which_server : str = "medrxiv") -> str:
         """
         Get the latest date of the publication stored in the database
         :param from_which_server: str, the server to check
-        :return: str, the latest date of the publication stored in the database as 'yyyy-mm-dd
+        :return: str, the latest date of the publications stored in the database as 'yyyy-mm-dd'
         """
         query =f"SELECT MAX(TO_DATE(date, 'YYYY-MM-DD')) FROM medrxiv WHERE SERVER = '{from_which_server}';"
         with self.connection() as conn:
             cursor=conn.execute(query)
             result = cursor.fetchone()
         return result[0]
-
 
 
     def upsert(self, publication: dict) -> int:
@@ -205,23 +213,37 @@ class PublicationStorage(PersistentStorage):
         """
         columns = publication.keys()
         values = [publication[column] for column in columns]
-        on_conflict_set = ", ".join([f"{column}=EXCLUDED.{column}" for column in columns if column not in ('doi', 'version')])
-
-        query = sql.SQL("""
-        INSERT INTO medrxiv ({columns})
-        VALUES ({values})
-        ON CONFLICT (doi, version) DO UPDATE SET {on_conflict_set}
+        # Sanitize column names
+        #sanitized_columns = [sql.Identifier(col) for col in columns]
+        #sanitized_values = [sql.Literal(value) for value in values] 
+        query = f"""
+        INSERT INTO medrxiv ({', '.join(columns)})
+        VALUES ({', '.join(['%s'] * len(values))})
+        ON CONFLICT (doi, version)
+        DO UPDATE SET
+            title = EXCLUDED.title,
+            authors = EXCLUDED.authors,
+            author_corresponding = EXCLUDED.author_corresponding,
+            author_corresponding_institution = EXCLUDED.author_corresponding_institution,
+            date = EXCLUDED.date,
+            type = EXCLUDED.type,
+            license = EXCLUDED.license,
+            category = EXCLUDED.category,
+            jatsxml = EXCLUDED.jatsxml,
+            abstract = EXCLUDED.abstract,
+            published = EXCLUDED.published,
+            server = EXCLUDED.server
         RETURNING id;
-        """).format(
-            columns=sql.SQL(', ').join(map(sql.Identifier, columns)),
-            values=sql.SQL(', ').join(map(sql.Placeholder, values)),
-            on_conflict_set=sql.SQL(on_conflict_set))
+        """
+        # Execute the query
         with self.connection() as conn:
-            cursor=conn.execute(query)
-            upserted_id = cursor.fetchone()[0]
-            return upserted_id
-    
 
+            with conn.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(query, values)
+                upserted_id = cursor.fetchone()['id']
+                # No explicit commit needed if using 'with' context for the cursor in psycopg 3
+                return upserted_id
+    
 
     def bulk_upsert(self, publications: list) -> list:
         """Bulk upsert a list of publications.
@@ -251,7 +273,6 @@ class PublicationStorage(PersistentStorage):
             return [upserted_id[0] for upserted_id in upserted_ids]
 
 
-
     def fetch(self, publication_id: int) -> dict:
         """fetch one publication by id from the database
         :param publication_id: str, the publication id
@@ -267,7 +288,6 @@ class PublicationStorage(PersistentStorage):
                     return dict(publication)  # Convert DictRow to a standard dict if needed
                 return None
             
-
 
     def list_newest_versions(self):
         """Get the newest versions of the publications (if there are versions higher than 1)
@@ -303,7 +323,6 @@ class PublicationStorage(PersistentStorage):
                 cursor.execute(query)
                 for publication in cursor:
                     yield dict(publication)
-
 
 
     def search_for(self, keywords: list, from_date=None, to_date=None, limit=0):
@@ -350,12 +369,10 @@ class PublicationStorage(PersistentStorage):
                 for publication in cursor:
                     yield dict(publication)
 
-    
 
     def delete(self, publication_id):
         raise NotImplementedError()
     
-
 
     def save_summary_method(self, summarymethod: str) -> int:
         """if not already existing, save a summary method to the database
@@ -368,7 +385,6 @@ class PublicationStorage(PersistentStorage):
             summary_method_id = cursor.fetchone()
             return summary_method_id
         
-
         
     def save_summary(self, summary: str, id_publication: int, id_summarymethod: int=1) -> int:
         """Save a summary to the database
@@ -383,14 +399,13 @@ class PublicationStorage(PersistentStorage):
         """
         with self.connection() as conn:
             with conn.cursor() as cursor:
-                logger.info(f"Saving summary for publication id=[{id_publication}]")
+                #logger.info(f"Saving summary for publication id=[{id_publication}]")
                 logger.debug(f"query=[{query}]")
                 cursor.execute(query, (summary, id_publication, id_summarymethod))
                 summary_id = cursor.fetchone()[0]
                 conn.commit()
                 return summary_id
             
-
 
     def missing_summaries(self, id_summarymethod : int =1) -> iter:
         """Get all publications that do not have a summary yet
@@ -408,35 +423,32 @@ class PublicationStorage(PersistentStorage):
                 logger.info(f"Found [{rowcount}] publications without a summary.")
                 for publication in tqdm(cursor, total=rowcount):
                     yield dict(publication)
-
-    
-                
-        
+   
 
 
 if __name__ == "__main__":
     from pprint import pprint
-    #import MedrXivScraper
+    import PGMedrXivScraper
 
     pg = PublicationStorage()
     assert pg.file_is_ingested("10.1101-2024.05.23.24307833.pdf"), "file_is_ingested failed"
     latest=pg.latest_stored()
     logger.info(f"Latest stored medrxiv record is [{latest}]")
-    assert str(latest).strip() == "2024-06-10", "latest_stored failed"
-    pub = pg.fetch(100)
-    assert pub['doi']=='10.1101/19001925', f"fetch failed, doi=[{pub['doi']}]"
-    pub = pg.fetch(103)
-    from PGMedrXivScraper import MedrXivScraper
-    scraper = MedrXivScraper(db=pg)
-    pprint(f"fetched pdf: {scraper.fetch_pdf_from_medrXiv(pub)}")
+    #assert str(latest).strip() == "2024-06-10", "latest_stored failed"
+    #pub = pg.fetch(100)
+    #assert pub['doi']=='10.1101/19001925', f"fetch failed, doi=[{pub['doi']}]"
+    #pub = pg.fetch(103)
+    #from PGMedrXivScraper import MedrXivScraper
+    #scraper = MedrXivScraper(db=pg)
+    #pprint(f"fetched pdf: {scraper.fetch_pdf_from_medrXiv(pub)}")
     #logger.info(f"""summary method saved, id=[{pg.save_summary_method("default")}]""")
     #logger.info(f"""summary saved, id=[{pg.save_summary("This is a summary", 100)}]""")
 
-    #assistant = MedrXivScraper.PGMedrXivAssistant(pg)
-    #print("summarizing missing publications ...")
-    #for publication in pg.missing_summaries():
+    assistant = PGMedrXivScraper.MedrXivAssistant(pg)
+    print("summarizing missing publications ...")
+    for publication in pg.missing_summaries():
         #logger.info(f"publication=[{publication}]")
-        #summary = assistant.summarize(publication)
+        summary = assistant.summarize(publication)
         #logger.info(f"summary=[{summary}]")
         #pg.save_summary(summary, publication['id'])
     # news = pg.list_newest_versions()s

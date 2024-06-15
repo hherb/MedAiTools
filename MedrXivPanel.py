@@ -25,7 +25,8 @@ import datetime as dt
 import html
 import json
 from functools import partial
-from MedrXivScraper import MedrXivScraper, MedrXivAssistant
+from PGMedrXivScraper import MedrXivScraper, MedrXivAssistant
+
 
 pn.extension('texteditor', loading_indicator=True, design="material")
 
@@ -66,7 +67,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 class MedrXivPanel(pn.viewable.Viewer):
     """A HTML panel displaying publications fetched from medrXiv"""
 
-    def __init__(self, pdf2RAG=None):
+    def __init__(self, pdf2RAG=None, db:):
         """
         The `MedrXivPanel` class provides a Panel app (web GUI) to fetch and display publications from
         medrXiv. The app allows users to specify date ranges and keywords for fetching publications and
@@ -90,6 +91,7 @@ class MedrXivPanel(pn.viewable.Viewer):
         end_date = dt.datetime.now()	#today
         start_date = end_date-dt.timedelta(days=2)
         self.date_range_picker = pn.widgets.DateRangePicker(name='Date Range', value=(start_date, end_date))
+        self.use_dates_for_search_tickbox = pn.widgets.Checkbox(name='Use dates for search', value=False)
         self.keywords= pn.widgets.TextInput(name='Keywords', value=', '.join(self.keywordlist), align=('center'), sizing_mode='stretch_width')
         self.heading= pn.pane.Markdown("## Your MedrXiv publications (not fetched yet)", sizing_mode='stretch_width')
         self.display_column=pn.Column()
@@ -97,7 +99,7 @@ class MedrXivPanel(pn.viewable.Viewer):
         self.panel = pn.Column(self.heading, 
                                 pn.Column(self.display_column, scroll=True, sizing_mode='stretch_both'),
                                 pn.Row(self.keywords, self.search_btn),
-                                pn.Row(self.date_range_picker, self.fetch_btn),
+                                pn.Row(self.use_dates_for_search , self.date_range_picker, self.fetch_btn),
                                 sizing_mode='stretch_both')
 
 
@@ -108,7 +110,6 @@ class MedrXivPanel(pn.viewable.Viewer):
                 </div>"""
         if title_str is not None:
             title= template.format(title_str=title_str)
-            print(title)
             self.heading.object= title
         elif from_date is not None and to_date is not None:
             title_str =  f"for {from_date} - {to_date}"
@@ -140,8 +141,7 @@ class MedrXivPanel(pn.viewable.Viewer):
         
         #self.html_panel.object = "<html><p>Fetching and analysing publications, this might take a while ...</p></html>"
         #scraper.set_category(self, categories=["Emergency Medicine", ], priority=True)
-        publications = scraper.fetch_publications_by_keywords(keywords=self.keywords.value.split(',') )
-        self.set_heading(title_str = f"{len(publications)} publications found", keywords=self.keywords.value)
+        publications = scraper.search_for(keywords=self.keywords.value.split(',') )
         self.display_publications(publications)
 
     def open_pdf(self, pdf_path, event):
@@ -164,6 +164,7 @@ class MedrXivPanel(pn.viewable.Viewer):
         #self.html_panel.object = scraper.list_abstracts(publications, format="html")
         display_widgets=[]
         self.display_column.clear()
+        counter=0
         for publication in publications:
             html=""
             #pdfurl = scraper.get_pdf_URL(publication)
@@ -171,6 +172,7 @@ class MedrXivPanel(pn.viewable.Viewer):
             html+=f"""<h3>{publication['title']}</h3>"""
             html+=f"""{publication['authors']} {publication['date']}"""
             html+="<hr>"
+            counter+=1
             try:
                 html+=f"""<p>{publication['summary']}</p>"""
             except KeyError:
@@ -186,9 +188,8 @@ class MedrXivPanel(pn.viewable.Viewer):
             htmlpage = HTML_TEMPLATE.format(html=html)
             htmlpane = pn.pane.HTML(htmlpage)
                     
-            if 'pdf_path' in publication:
-                pdf_path=publication['pdf_path']
-            else:
+            pdf_path =  self.scraper.has_pdf(publication):
+            if not pdf_path
                 try:
                     info=pn.state.notifications.info('Attempting to fetch the PDF from the internet...', duration=0)
                     pdf_path = scraper.fetch_pdf_from_publication(publication)
@@ -197,10 +198,11 @@ class MedrXivPanel(pn.viewable.Viewer):
                     info.destroy()
                     info= pn.state.notifications.info('Failed to locate PDF, and failed to retrieve it from the internet', duration=10)
                     pdf_path=""
-             # Define a callback function that takes the pdf_path as a parameter
+             # Define a callback function that takes the pdf_path as a parameter    
             btn = pn.widgets.Button(name=f"Read full paper", button_type='primary', width=60, margin=25)
             btn.on_click(partial(self.open_pdf, pdf_path))
             display_widgets.append(pn.Column(htmlpane, btn))
+        self.set_heading(title_str = f"{counter} publications found", keywords=self.keywords.value)
         scrollable_panel = pn.Column(*display_widgets, scroll=True) 
         self.display_column.append(scrollable_panel)
         
@@ -219,16 +221,23 @@ class MedrXivPanel(pn.viewable.Viewer):
         """
         """Fetch publications from medrXiv and display them in the panel"""
         # Fetch publications
-        start_date, end_date = self.date_range_picker.value
+        
+        from_date = None
+        to_date = None
+        if self.use_dates_for_search.value:
+            start_date, end_date = self.date_range_picker.value
+            from_date=start_date.strftime("%Y-%m-%d")
+            to_date=end_date.strftime("%Y-%m-%d")
+        
         scraper = MedrXivScraper()
         assistant = MedrXivAssistant()
-        from_date=start_date.strftime("%Y-%m-%d")
-        to_date=end_date.strftime("%Y-%m-%d")
+        
         self.set_heading(from_date=from_date, to_date=to_date, keywords=self.keywords.value)
+        
         self.html_panel.object = "<html><p>Fetching and analysing publications, this might take a while ...</p></html>"
         #scraper.set_category(self, categories=["Emergency Medicine", ], priority=True)
         publications = scraper.fetch_medrxiv_publications(from_date=from_date, to_date=to_date, keywords=self.keywords.value.split(',') )
-        publications=assistant.analyze_publications(publications)
+        #publications=assistant.analyze_publications(publications)
         self.display_publications(publications)  
 
         
