@@ -169,12 +169,14 @@ class MedrXivScraper:
         """
         return publication.get('pdf_filename', '') != ''
     
-    def pdf_path(self, publication: dict) -> str:
+    def pdf_path(self, publication: dict, fetch: bool = False) -> str:
         """returns the path to the PDF of a publication
         :param publication: a publication in the form of a dictionary
         :return: the path to the PDF file
         """
         pdfpath = self.db.get_pdf_path(publication['id'])
+        if not pdfpath and fetch:
+            pdfpath = self.fetch_pdf_from_medrXiv(publication)
         return pdfpath
         
                 

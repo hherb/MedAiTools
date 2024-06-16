@@ -143,15 +143,32 @@ class MedrXivPanel(pn.viewable.Viewer):
         publications = self.scraper.db.search_for(keywords=self.keywords.value.split(',') )
         self.display_publications(publications)
 
-    def open_pdf(self, pdf_path, event):
+    def open_pdf(self, publication, event):
         """
         This function opens a PDF file, ingests it into the vector store (if not ingested already) 
         and displays it in the Research Assistant GUI for interrogation.
         :param pdf_path: The path to the PDF file to open
         """
-        if self.pdf2RAG is not None:
+        info=pn.state.notifications.info('Retrieving PDF...', duration=0)
+        pdf_path = self.scraper.pdf_path(publication)
+        info.destroy()
+        if not pdf_path:
+            info=pn.state.notifications.info('Failed to locate PDF, attempting to retrieve it from the internet', duration=0)
+            try:         
+                pdf_path = self.scraper.fetch_pdf_from_publication(publication)
+                info.destroy()
+            except:
+                info.destroy()
+                info= pn.state.notifications.info('Failed to locate PDF, and failed to retrieve it from the internet', duration=10)
+                pdf_path=""
+
+                
+         
+        if pdf_path and self.pdf2RAG is not None:
             self.pdf2RAG(pdf_path)
-        #print(f"Opening PDF: {pdf_path}")    
+        #print(f"Opening PDF: {pdf_path}")   
+        # 
+    
 
     def display_publications(self, publications: dict):
         """
@@ -191,20 +208,13 @@ class MedrXivPanel(pn.viewable.Viewer):
             htmlpage = HTML_TEMPLATE.format(html=html)
             htmlpane = pn.pane.HTML(htmlpage)
                     
-            pdf_path =  self.scraper.pdf_path(publication)
-            # if not pdf_path:
-            #     try:
-            #         info=pn.state.notifications.info('Attempting to fetch the PDF from the internet...', duration=0)
-            #         pdf_path = self.scraper.fetch_pdf_from_publication(publication)
-            #         info.destroy()
-            #     except:
-            #         info.destroy()
-            #         info= pn.state.notifications.info('Failed to locate PDF, and failed to retrieve it from the internet', duration=10)
-            #         pdf_path=""
+            pdf_path =  self.scraper.pdf_path(publication, fetch=True) #Will attempt to fetch it if not already available
+    
              # Define a callback function that takes the pdf_path as a parameter    
             btn = pn.widgets.Button(name=f"Read full paper", button_type='primary', width=60, margin=10)
-            if pdf_path:
-                btn.on_click(partial(self.open_pdf, pdf_path))
+            btn.on_click(partial(self.open_pdf, publication))
+            if not pdf_path:
+                btn.disabled=True
             btn_critique = pn.widgets.Button(name=f"Critique", button_type='primary', width=60, margin=10)
             display_widgets.append(pn.Column(htmlpane, btn, btn_critique))
         self.set_heading(title_str = f"{counter} publications found", keywords=self.keywords.value)
