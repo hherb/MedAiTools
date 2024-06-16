@@ -103,9 +103,17 @@ class MedrXivPanel(pn.viewable.Viewer):
                                 pn.Row(self.use_dates_for_search_tickbox , self.date_range_picker, self.fetch_btn),
                                 sizing_mode='stretch_both')
 
-
+    def __panel__(self):
+        return self.panel
 
     def set_heading(self, title_str= None, from_date=None, to_date=None, keywords="", domains=""):
+        """Sets the heading of the panel to display the search criteria and results.
+        :param title_str: The title of the panel
+        :param from_date: The start date for the search
+        :param to_date: The end date for the search
+        :param keywords: The keywords used for the search
+        :param domains: The domains to search for
+        """
         template= """<div style="background-color:#85a3e0; color:white; border-radius:10px; padding:10px;">
                 <h2>Your MedrXiv reading list: {title_str} </h2>
                 </div>"""
@@ -122,41 +130,32 @@ class MedrXivPanel(pn.viewable.Viewer):
             self.heading.object=(template)
 
 
-
     def find_publications(self, event):
         """
-        The function fetches publications from medrXiv based on specified criteria, displays them in a
+        The function finds publications from medrXiv based on specified criteria, displays them in a
         panel with detailed information, and provides options to read abstracts, critiques, and access
         full PDFs.
         
         :param event: The `event` parameter in the `fetch_publications` method is not being used in the
-        provided code snippet. It seems to be an unused parameter in this context. If you intended to
-        use it for some specific purpose or functionality, you can modify the method to incorporate the
-        `event` parameter as
+        provided code snippet. It is passed by a UI element and not required in the function.
         """
-        """Fetch publications from medrXiv and display them in the panel"""
-
         # Fetch publications
-        
-        
-        
-        #self.html_panel.object = "<html><p>Fetching and analysing publications, this might take a while ...</p></html>"
-        #scraper.set_category(self, categories=["Emergency Medicine", ], priority=True)
         publications = self.scraper.db.search_for(keywords=self.keywords.value.split(',') )
         self.display_publications(publications)
 
     def open_pdf(self, pdf_path, event):
         """
-        This function opens a PDF file, ingests it into the vector store (if not ngested already) 
+        This function opens a PDF file, ingests it into the vector store (if not ingested already) 
         and displays it in the Research Assistant GUI for interrogation.
+        :param pdf_path: The path to the PDF file to open
         """
         if self.pdf2RAG is not None:
             self.pdf2RAG(pdf_path)
-        print(f"Opening PDF: {pdf_path}")    
+        #print(f"Opening PDF: {pdf_path}")    
 
     def display_publications(self, publications: dict):
         """
-        The function displays the fetched publications in a panel with detailed information and provides
+        The function displays the publications in a panel with detailed information and provides
         options to read abstracts, critiques, and access full PDFs.
         If the PDF is not available locally, the function attempts to fetch it from the internet.
         :param publications:   a medrXiv publication dictionary
@@ -209,40 +208,37 @@ class MedrXivPanel(pn.viewable.Viewer):
         
 
 
-    def fetch_publications(self, event):
-        """
-        The function fetches publications from medrXiv based on specified criteria, displays them in a
-        panel with detailed information, and provides options to read abstracts, critiques, and access
-        full PDFs.
+    # def fetch_publications(self, event):
+    #     """
+    #     The function fetches publications from medrXiv based on specified criteria, displays them in a
+    #     panel with detailed information, and provides options to read abstracts, critiques, and access
+    #     full PDFs.
         
-        :param event: The `event` parameter in the `fetch_publications` method is not being used in the
-        provided code snippet. It seems to be an unused parameter in this context. If you intended to
-        use it for some specific purpose or functionality, you can modify the method to incorporate the
-        `event` parameter as
-        """
-        """Fetch publications from medrXiv and display them in the panel"""
-        # Fetch publications
+    #     :param event: The `event` parameter in the `fetch_publications` method is not being used in the
+    #     provided code snippet. It seems to be an unused parameter in this context. If you intended to
+    #     use it for some specific purpose or functionality, you can modify the method to incorporate the
+    #     `event` parameter as
+    #     """
+    #     """Fetch publications from medrXiv and display them in the panel"""
+    #     # Fetch publications
         
-        from_date = None
-        to_date = None
-        if self.use_dates_for_search.value:
-            start_date, end_date = self.date_range_picker.value
-            from_date=start_date.strftime("%Y-%m-%d")
-            to_date=end_date.strftime("%Y-%m-%d")
+    #     from_date = None
+    #     to_date = None
+    #     if self.use_dates_for_search.value:
+    #         start_date, end_date = self.date_range_picker.value
+    #         from_date=start_date.strftime("%Y-%m-%d")
+    #         to_date=end_date.strftime("%Y-%m-%d")
         
         
-        self.set_heading(from_date=from_date, to_date=to_date, keywords=self.keywords.value)
+    #     self.set_heading(from_date=from_date, to_date=to_date, keywords=self.keywords.value)
         
-        self.html_panel.object = "<html><p>Fetching and analysing publications, this might take a while ...</p></html>"
-        #scraper.set_category(self, categories=["Emergency Medicine", ], priority=True)
-        publications = self.scraper.fetch_publications(from_date=from_date, to_date=to_date, keywords=self.keywords.value.split(',') )
-        #publications=assistant.analyze_publications(publications)
-        self.display_publications(publications)  
+    #     self.html_panel.object = "<html><p>Fetching and analysing publications, this might take a while ...</p></html>"
+    #     #scraper.set_category(self, categories=["Emergency Medicine", ], priority=True)
+    #     publications = self.scraper.fetch_publications(from_date=from_date, to_date=to_date, keywords=self.keywords.value.split(',') )
+    #     #publications=assistant.analyze_publications(publications)
+    #     self.display_publications(publications)  
 
         
-
-    def __panel__(self):
-        return self.panel
 
 
 
