@@ -22,6 +22,9 @@ from RAG import RAG
 
 
 class PDFPanel(pn.viewable.Viewer):
+    """
+    A panel for displaying PDF files and querying the RAG
+    """
 
     def __init__(self, dummypdf="pdf_sample.pdf"):       
         self.pdf=dummypdf
@@ -34,6 +37,10 @@ class PDFPanel(pn.viewable.Viewer):
 
 
     def setup_panels(self):
+        """
+        Set up the user interface panels
+        """
+
         self.pdf_pane = pn.pane.PDF(self.pdf, start_page=1, sizing_mode='stretch_both', embed=True)
         self.file_input = pn.widgets.FileInput(accept=".pdf", sizing_mode='stretch_width')
         self.file_input.param.watch(self.update_pdf, 'value') 
@@ -53,7 +60,12 @@ class PDFPanel(pn.viewable.Viewer):
 
 
     # Define a function to update the PDF widget based on the uploaded file       
-    def update_pdf(self, event):                                                        
+    def update_pdf(self, event):  
+        """
+        Update the PDF viewer with the uploaded PDF file
+        Args:
+            event (param.Event): The event object
+        """                                                      
         if event.new:   
             print(f"PDF file name = {self.file_input.filename}")  
             filepath="./library/"+self.file_input.filename
@@ -64,6 +76,13 @@ class PDFPanel(pn.viewable.Viewer):
                 
 
     def response(self, contents, user, instance):
+        """
+        Respond to the user's query
+        Args:
+            contents (str): The user's query
+            user (str): The user's name
+            instance (ChatInterface): The chat interface instance
+        """
         displayed_pdf=self.displayed_pdf
         if self.check_all_documents.value:
             displayed_pdf=None
@@ -76,7 +95,7 @@ class PDFPanel(pn.viewable.Viewer):
         # print(response.source_nodes[0].score)
         for source in response.source_nodes:
             id= source.id_
-            sources+=f"{response.metadata[id].get('file_name')}, score: {source.score}<br>"
+            sources+=f"{response.metadata[id].get('file_name')}, page {response.metadata[id].get('page_label')}, score: {source.score}<br>"
         display_response = f"{response.response.strip()}<hr>Source: {sources}"
         return display_response
     
@@ -97,9 +116,18 @@ class PDFPanel(pn.viewable.Viewer):
             info.destroy()
 
     def remember_ingestion(self,filepath):
+        """
+        avoid duplicate ingestion of the same PDF file
+        """
         pass
 
     def has_ben_ingested(self,filepath):
+        """
+        check if the PDF file has already been ingested
+    
+        Returns:
+            bool: True if the PDF file has already been ingested, False otherwise
+        """
         return False
 
 if __name__ == "__main__":

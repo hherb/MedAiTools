@@ -3,7 +3,8 @@ __pycache__/*
 # OS junk files
 [Tt]humbs.db
 *.DS_Store
-
+scrap/*
+library/*
 # Visual Studio files
 *.[Oo]bj
 *.user
@@ -32,3 +33,9 @@ obj/
 [Dd]ebug*/
 [Rr]elease*/
 Ankh.NoLoad
+medai/.env
+.vscode/settings.json
+.vscode/extensions.json
+.env
+mygui.ipynb
+mygui.ipynb

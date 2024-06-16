@@ -1,0 +1,13 @@
+llm:
+  provider: ollama
+  config:
+    model: "openai/MaziyarPanahi/Llama-3-8B-Instruct-32k-v0.1-GGUF"
+    temperature: 0.3
+    top_p: 1
+    stream: true
+    base_url: 'http://localhost:11434'
+vectordb:
+  provider: qdrant
+  config:
+    collection_name: my_qdrant_index
+

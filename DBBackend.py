@@ -63,3 +63,7 @@ class DBResearch(DataBase):
 
     def close(self):
         self.db.close()
+
+
+dict_keys =['doi', 'title', 'authors', 'author_corresponding', 'author_corresponding_institution', 'date', 'version', 'type', 
+            'license', 'category', 'jatsxml', 'abstract', 'published', 'server', 'summary', 'keywords', 'pdf_path', 'abstract_critique']
