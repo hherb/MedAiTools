@@ -67,7 +67,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 class MedrXivPanel(pn.viewable.Viewer):
     """A HTML panel displaying publications fetched from medrXiv"""
 
-    def __init__(self, pdf2RAG=None, db:):
+    def __init__(self, pdf2RAG=None, db=None):
         """
         The `MedrXivPanel` class provides a Panel app (web GUI) to fetch and display publications from
         medrXiv. The app allows users to specify date ranges and keywords for fetching publications and
@@ -77,6 +77,7 @@ class MedrXivPanel(pn.viewable.Viewer):
         """    
         
         self.pdf2RAG=pdf2RAG
+        self.scraper = MedrXivScraper(tqdm=Tqdm()) 
         self.keywordlist = ["GPT4", "machine learning", "deep learning", "large language model", "LLM", "Anthropic", "OpenAI", "Artifical Intelligence"]
         self.html_panel = pn.panel("<html>Hit 'Fetch' button ...", 
                                        name='MedrXiv Publications', 
@@ -99,7 +100,7 @@ class MedrXivPanel(pn.viewable.Viewer):
         self.panel = pn.Column(self.heading, 
                                 pn.Column(self.display_column, scroll=True, sizing_mode='stretch_both'),
                                 pn.Row(self.keywords, self.search_btn),
-                                pn.Row(self.use_dates_for_search , self.date_range_picker, self.fetch_btn),
+                                pn.Row(self.use_dates_for_search_tickbox , self.date_range_picker, self.fetch_btn),
                                 sizing_mode='stretch_both')
 
 
@@ -136,12 +137,12 @@ class MedrXivPanel(pn.viewable.Viewer):
         """Fetch publications from medrXiv and display them in the panel"""
 
         # Fetch publications
-        scraper = MedrXivScraper(tqdm=Tqdm()) 
+        
         
         
         #self.html_panel.object = "<html><p>Fetching and analysing publications, this might take a while ...</p></html>"
         #scraper.set_category(self, categories=["Emergency Medicine", ], priority=True)
-        publications = scraper.search_for(keywords=self.keywords.value.split(',') )
+        publications = self.scraper.db.search_for(keywords=self.keywords.value.split(',') )
         self.display_publications(publications)
 
     def open_pdf(self, pdf_path, event):
@@ -180,19 +181,19 @@ class MedrXivPanel(pn.viewable.Viewer):
                 publication=assistant.summarize_publication(publication, commit=True) 
                 html+=f"""<p>{publication['abstract']}</p>"""
             html+=f"""<button onclick="toggleAbstract(this)"> Read Abstract </button>
-                    <div class="abstract" style="display:none;"><p>{publication['abstract']}</p></div>
-                    <button onclick="toggleCritique(this)"> Read Critique </button>
-                    <div class="abstract" style="display:none;"><p>{publication['abstract_critique']}</p></div>"""
+                    <div class="abstract" style="display:none;"><p>{publication['abstract']}</p></div>"""
+                    #<button onclick="toggleCritique(this)"> Read Critique </button>
+                    #<div class="abstract" style="display:none;"><p>{publication['abstract_critique']}</p></div>"""
             html+="</div>"
             html+="<br>"
             htmlpage = HTML_TEMPLATE.format(html=html)
             htmlpane = pn.pane.HTML(htmlpage)
                     
-            pdf_path =  self.scraper.has_pdf(publication):
-            if not pdf_path
+            pdf_path =  self.scraper.has_pdf(publication)
+            if not pdf_path:
                 try:
                     info=pn.state.notifications.info('Attempting to fetch the PDF from the internet...', duration=0)
-                    pdf_path = scraper.fetch_pdf_from_publication(publication)
+                    pdf_path = self.scraper.fetch_pdf_from_publication(publication)
                     info.destroy()
                 except:
                     info.destroy()
@@ -229,14 +230,12 @@ class MedrXivPanel(pn.viewable.Viewer):
             from_date=start_date.strftime("%Y-%m-%d")
             to_date=end_date.strftime("%Y-%m-%d")
         
-        scraper = MedrXivScraper()
-        assistant = MedrXivAssistant()
         
         self.set_heading(from_date=from_date, to_date=to_date, keywords=self.keywords.value)
         
         self.html_panel.object = "<html><p>Fetching and analysing publications, this might take a while ...</p></html>"
         #scraper.set_category(self, categories=["Emergency Medicine", ], priority=True)
-        publications = scraper.fetch_medrxiv_publications(from_date=from_date, to_date=to_date, keywords=self.keywords.value.split(',') )
+        publications = self.scraper.fetch_publications(from_date=from_date, to_date=to_date, keywords=self.keywords.value.split(',') )
         #publications=assistant.analyze_publications(publications)
         self.display_publications(publications)  
 

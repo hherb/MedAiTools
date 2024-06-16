@@ -134,7 +134,10 @@ class PersistentStorage:
     def close_all_connections(self):
         """Close all connections in the pool."""
         logger.info("Closing all connections in the PostgreSQL connection pool.")
-        self.connection_pool.close()
+        try:
+            self.connection_pool.closeall()
+        except Exception as e:
+            logger.error(f"Could not close all connections in the PostgreSQL connection pool. Error: {e}")
 
     def __del__(self):
         self.close_all_connections()
