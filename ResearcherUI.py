@@ -24,7 +24,7 @@ from MedrXivPanel import MedrXivPanel
 from RAG_UI import PDFPanel
 from medai.tools.apikeys import load_api_keys  
 
-
+pn.extension('texteditor', loading_indicator=True, design="material")
 
 #The API keys needed for this to work - they will be loaded from the os environment:
 

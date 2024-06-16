@@ -2,6 +2,8 @@ import panel as pn
 from panel.chat import ChatInterface
 from RAG import RAG
 
+pn.extension('texteditor', notifications=True, loading_indicator=True, design="material")
+
 # FAILED="""The study discussed in the provided context focuses on mapping the sub-national spatial variation in housing materials across low- and middle-income countries. It does not mention genetic subtypes in Alzheimer's disease."""
 
 # class RAG:

@@ -20,8 +20,8 @@ from llama_index.core.vector_stores.types import (
 )
 
 # we use  one of the embedding models stored at HuggingFAce
-#from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.embeddings.fastembed import FastEmbedEmbedding
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+#from llama_index.embeddings.fastembed import FastEmbedEmbedding
 from llama_index.llms.litellm import LiteLLM
 from medai.LLM import LOCAL_DEFAULT_MODEL, LOCAL_LLM_API_KEY, LOCAL_LLM_API_BASE
 
@@ -41,9 +41,9 @@ class RAG:
     PDF files.
     """
     def __init__(self, 
-                 #EMBEDDING_MODEL="BAAI/bge-m3",
+                 EMBEDDING_MODEL="BAAI/bge-m3",
                  #EMBEDDING_MODEL="mixedbread-ai/mxbai-embed-large-v1",
-                 EMBEDDING_MODEL="snowflake/snowflake-arctic-embed-l",
+                 #EMBEDDING_MODEL="snowflake/snowflake-arctic-embed-l",
                  EMBEDDING_DIMENSIONS=1024,
                  LLM_NAME=LOCAL_DEFAULT_MODEL,
                  callback=None  #callback function to call when the user needs to be infromed of progress / action
@@ -63,9 +63,9 @@ class RAG:
         #set up our embedding model. It will be downloaded into a local cache directory 
 		#if it doesn't exist locally yet. For this, an internet connection would be required
         self._logger.info("loading the embedding model")
-        #self._embedding_model = HuggingFaceEmbedding(model_name=self.EMBEDDING_MODEL)
-        self.embedding_model = FastEmbedEmbedding(model_name=self.EMBEDDING_MODEL)
-        self.llamaindex_settings.embed_model = self.embedding_model
+        self._embedding_model = HuggingFaceEmbedding(model_name=self.EMBEDDING_MODEL)
+        #self._embedding_model = FastEmbedEmbedding(model_name=self.EMBEDDING_MODEL)
+        self.llamaindex_settings.embed_model = self._embedding_model
         self.llamaindex_settings.chunk_size = 512  #preliminary hack - we'll change that when we use more sophisticated / semantic chunking methods
         self.llamaindex_settings.batch_size = 20  # batch_size controls how many nodes are encoded with sparse vectors at once
         self.llamaindex_settings.enable_hybrid = True  # create our vector store with hybrid indexing enabled
@@ -77,7 +77,7 @@ class RAG:
         #self.storage_context = StorageContext.from_defaults(vector_store=self.vector_store)
         Settings.chunk_size = 512
         self._logger.info("creating the vector index")
-        self.hybrid_index = VectorStoreIndex.from_vector_store(embed_model=self.embedding_model, vector_store = self.hybrid_vector_store, storage_context=self.storage_context)
+        self.hybrid_index = VectorStoreIndex.from_vector_store(embed_model=self._embedding_model, vector_store = self.hybrid_vector_store, storage_context=self.storage_context)
 
 
     def initiate_hybrid_vector_store(self):
@@ -92,7 +92,7 @@ class RAG:
             user='medai',
             table_name="RAGLibrarian",
             embed_dim=self.EMBEDDING_DIMENSIONS,
-            #embed_model=self.embedding_model,
+            #embed_model=self._embedding_model,
             hybrid_search=True,
             text_search_config="english",
         )
@@ -102,7 +102,7 @@ class RAG:
         )
         #try and load the index, if it exists
         try:
-            self.hybrid_index = VectorStoreIndex.from_vector_store(embed_model=self.embedding_model, vector_store = self.hybrid_vector_store, storage_context=self.storage_context)
+            self.hybrid_index = VectorStoreIndex.from_vector_store(embed_model=self._embedding_model, vector_store = self.hybrid_vector_store, storage_context=self.storage_context)
         except Exception as e:
             self._logger.info("failed to activate hybrid index, not initialized yet?")
             self._logger.info(e)
@@ -123,7 +123,7 @@ class RAG:
             return
         documents = SimpleDirectoryReader(input_files=[pdfpath,]).load_data()
         print(f"Loaded {len(documents)} documents, indexing now ....")
-        self.hybrid_index = VectorStoreIndex.from_documents(documents, embed_model=self.embedding_model, storage_context=self.storage_context)
+        self.hybrid_index = VectorStoreIndex.from_documents(documents, embed_model=self._embedding_model, storage_context=self.storage_context)
         print(f"Indexing complete")
         self.last_ingested = pdfpath
 

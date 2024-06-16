@@ -1,4 +1,4 @@
-import os
+import os, os.path
 import requests
 from datetime import datetime, timedelta
 from tqdm import tqdm
@@ -168,6 +168,15 @@ class MedrXivScraper:
         :return: True if the publication has a PDF, False otherwise
         """
         return publication.get('pdf_filename', '') != ''
+    
+    def pdf_path(self, publication: dict) -> str:
+        """returns the path to the PDF of a publication
+        :param publication: a publication in the form of a dictionary
+        :return: the path to the PDF file
+        """
+        pdfpath = self.db.get_pdf_path(publication['id'])
+        return pdfpath
+        
                 
 
     def find_publications_without_pdf(self, only_highest_version=True):

@@ -328,7 +328,7 @@ class PublicationStorage(PersistentStorage):
                     yield dict(publication)
 
 
-    def search_for(self, keywords: list, from_date=None, to_date=None, limit=0):
+    def search_for(self, keywords: list, from_date=None, to_date=None, limit=0) -> iter:
         """Search for publications with the given keywords within a specified date range.
         :param keywords: list of str, the keywords to search for
         :param from_date: str or None, the start date for filtering (inclusive)
@@ -343,7 +343,7 @@ class PublicationStorage(PersistentStorage):
             SELECT
                 *
             FROM
-                publications_newest_revisions
+                newest_revision_with_fulltext_columns
             WHERE
                 (title ILIKE ANY(ARRAY[{keywords}])
                 OR abstract ILIKE ANY(ARRAY[{keywords}])
@@ -372,6 +372,19 @@ class PublicationStorage(PersistentStorage):
                 for publication in cursor:
                     yield dict(publication)
 
+    def get_pdf_path(self, publication_id: int) -> str:
+        """Get the path to the PDF file of a publication
+        :param publication_id: int, the publication id
+        :return: str, the path to the PDF file
+        """
+        fname=''
+        query = sql.SQL("SELECT pdf_filename FROM fulltext WHERE id_publication = {publication_id}").format(publication_id=sql.Literal(publication_id))
+        with self.connection() as conn:
+            cursor = conn.execute(query)
+            result = cursor.fetchone()
+            if result:
+                fname = os.path.join(self.storage_directory, result[0])
+        return fname
 
     def delete(self, publication_id):
         raise NotImplementedError()

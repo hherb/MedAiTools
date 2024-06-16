@@ -84,7 +84,7 @@ class MedrXivPanel(pn.viewable.Viewer):
                                        sizing_mode='stretch_both')
         
         self.fetch_btn = pn.widgets.Button(name='Fetch', button_type='primary', width=60, margin=25)
-        self.fetch_btn.on_click(self.fetch_publications)
+        self.fetch_btn.on_click(self.find_publications)
 
         self.search_btn = pn.widgets.Button(name='Search', button_type='primary', width=60, margin=25)
         self.search_btn.on_click(self.find_publications)
@@ -166,6 +166,7 @@ class MedrXivPanel(pn.viewable.Viewer):
         self.display_column.clear()
         counter=0
         for publication in publications:
+            counter+=1
             html=""
             #pdfurl = scraper.get_pdf_URL(publication)
             html+="""<div style="border:1px solid black; border-radius: 10px; padding: 10px; background-color: #ebf0fa;">"""
@@ -173,12 +174,14 @@ class MedrXivPanel(pn.viewable.Viewer):
             html+=f"""{publication['authors']} {publication['date']}"""
             html+="<hr>"
             counter+=1
+
             try:
                 html+=f"""<p>{publication['summary']}</p>"""
             except KeyError:
                 assistant = MedrXivAssistant(tqdm=Tqdm())
                 publication=assistant.summarize_publication(publication, commit=True) 
                 html+=f"""<p>{publication['abstract']}</p>"""
+
             html+=f"""<button onclick="toggleAbstract(this)"> Read Abstract </button>
                     <div class="abstract" style="display:none;"><p>{publication['abstract']}</p></div>"""
                     #<button onclick="toggleCritique(this)"> Read Critique </button>
@@ -188,20 +191,22 @@ class MedrXivPanel(pn.viewable.Viewer):
             htmlpage = HTML_TEMPLATE.format(html=html)
             htmlpane = pn.pane.HTML(htmlpage)
                     
-            pdf_path =  self.scraper.has_pdf(publication)
-            if not pdf_path:
-                try:
-                    info=pn.state.notifications.info('Attempting to fetch the PDF from the internet...', duration=0)
-                    pdf_path = self.scraper.fetch_pdf_from_publication(publication)
-                    info.destroy()
-                except:
-                    info.destroy()
-                    info= pn.state.notifications.info('Failed to locate PDF, and failed to retrieve it from the internet', duration=10)
-                    pdf_path=""
+            pdf_path =  self.scraper.pdf_path(publication)
+            # if not pdf_path:
+            #     try:
+            #         info=pn.state.notifications.info('Attempting to fetch the PDF from the internet...', duration=0)
+            #         pdf_path = self.scraper.fetch_pdf_from_publication(publication)
+            #         info.destroy()
+            #     except:
+            #         info.destroy()
+            #         info= pn.state.notifications.info('Failed to locate PDF, and failed to retrieve it from the internet', duration=10)
+            #         pdf_path=""
              # Define a callback function that takes the pdf_path as a parameter    
-            btn = pn.widgets.Button(name=f"Read full paper", button_type='primary', width=60, margin=25)
-            btn.on_click(partial(self.open_pdf, pdf_path))
-            display_widgets.append(pn.Column(htmlpane, btn))
+            btn = pn.widgets.Button(name=f"Read full paper", button_type='primary', width=60, margin=10)
+            if pdf_path:
+                btn.on_click(partial(self.open_pdf, pdf_path))
+            btn_critique = pn.widgets.Button(name=f"Critique", button_type='primary', width=60, margin=10)
+            display_widgets.append(pn.Column(htmlpane, btn, btn_critique))
         self.set_heading(title_str = f"{counter} publications found", keywords=self.keywords.value)
         scrollable_panel = pn.Column(*display_widgets, scroll=True) 
         self.display_column.append(scrollable_panel)
