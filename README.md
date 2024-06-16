@@ -14,6 +14,7 @@
   
   ![image](https://github.com/hherb/MedAiTools/assets/15961294/82ef7b87-4faf-4aef-9bad-21b28f6c4857)
 
+---
 
 ## MedRxivScraper
 **Automated System for Fetching and Summarizing Pre-Publications**
@@ -24,15 +25,28 @@
 - **Integration with Librarian:** A single click or keystroke opens the document for interrogation.
 - **Purpose:** To establish an automated "news service" that presents the latest pre-publications along with AI-generated critiques.
 
+----
+
 ## StudyCritique
 **AI-Based Analysis of Publications**
 
 - **Weakness Detection:** Analyzes publications to identify weaknesses in argumentation or methods.
 
+---
+
 ## LiteratureReviewer
 **Deep Web Scraping and Pre-Screening of Relevant Papers**
 
 - **Knowledge Base Integration:** Uses existing knowledge bases to retrieve relevant papers, which are then pre-screened by AI according to user-definable criteria in natural language.
+- **Configurable Agents:** We use a variety of libraries (eg gpt-researcher, phidata, ...) as well as hand crafted agentic researchers with fine granular tunability by the end user to ensure fitness for each purpose
+
+
+  ![image](https://github.com/hherb/MedAiTools/assets/15961294/5c560b91-c005-4b00-9fd4-5ed278705228)
+
+
+  ![image](https://github.com/hherb/MedAiTools/assets/15961294/07df10cc-f85f-413e-86ea-880fe698c970)
+
+---
 
 ## Design Principles
 
