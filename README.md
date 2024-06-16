@@ -1,16 +1,67 @@
-# MedAiTools
-a collection of tools and python libraries for use in medical practice and research. Emphasis on using only tools and LLMs that can be run locally with limited resources, in order to protect against privacy breaches and stay independent of subscription shackles.
+# MedAiTools - An AI-Assisted Workbench for Medical Researchers
 
-- MyRAGLibrarian: a vector database grounded knowledge retrieval system. Upload PDF files etc, and chat with your data in natural language.
-  The purpose is to be able to have answers from an AI grounded on attributable sources, easily extensible, and easy to keep the knowledge base up to date
-  
-- MedRxivScraper: a system to download pre-publications from medRxiv (thanks guys, wonderful service!!!) & have the papers automatically summarised & critiqued.
-  The purppose is to establish an automatised "news service" that presents the freshest pre-publications, including food for thought (the LLM generated critique of the papers)
+**A collection of tools and Python libraries for medical practice and research, with an emphasis on local execution to protect privacy and avoid subscription dependencies.**
 
-- StudyCritique: LLM based system to analyze publications, eg finding weaknesses in argumentation or methods, abstractive rather than extractive high quality summaries of texts of arbitrary length, and re-ranking of retrieved documents in alignment with user preferences & domain (get to read the most important stuff - to you - first!)
+**Status:** Some tools are functional as proofs of concept. Feel free to experiment and contribute to their development.
 
+## Librarian
+**Natural Language Database Query and Knowledge Retrieval System**
 
-![Image of a robotic health professional tending to a patient](https://github.com/hherb/MedAiTools/blob/main/Robodoc2%20copy.png?raw=true)
-
+- **Upload and Query:** Upload PDF files and query your data using natural language.
+- **Document Interrogation:** Interrogate a single document, a list of documents, or all documents stored in the database.
+- **Purpose:** To provide AI-driven answers grounded in attributable sources, with easy updates and extensibility.
 
   
+  ![image](https://github.com/hherb/MedAiTools/assets/15961294/82ef7b87-4faf-4aef-9bad-21b28f6c4857)
+
+---
+
+## MedRxivScraper
+**Automated System for Fetching and Summarizing Pre-Publications**
+
+- **Background Fetching:** Automatically fetches new publications and their associated full papers from medRxiv and ingests them into the knowledge base.
+- **High-Quality Summaries:** Provides abstractive summaries of texts of any length and re-ranks retrieved documents according to user preferences and domain relevance.
+- **User-Configurable Interest:** Presents new papers of interest with titles and summaries based on user-configurable criteria in natural language.
+- **Integration with Librarian:** A single click or keystroke opens the document for interrogation.
+- **Purpose:** To establish an automated "news service" that presents the latest pre-publications along with AI-generated critiques.
+
+----
+
+## StudyCritique
+**AI-Based Analysis of Publications**
+
+- **Weakness Detection:** Analyzes publications to identify weaknesses in argumentation or methods.
+
+---
+
+## LiteratureReviewer
+**Deep Web Scraping and Pre-Screening of Relevant Papers**
+
+- **Knowledge Base Integration:** Uses existing knowledge bases to retrieve relevant papers, which are then pre-screened by AI according to user-definable criteria in natural language.
+- **Configurable Agents:** We use a variety of libraries (eg gpt-researcher, phidata, ...) as well as hand crafted agentic researchers with fine granular tunability by the end user to ensure fitness for each purpose
+
+
+  ![image](https://github.com/hherb/MedAiTools/assets/15961294/5c560b91-c005-4b00-9fd4-5ed278705228)
+
+
+  ![image](https://github.com/hherb/MedAiTools/assets/15961294/07df10cc-f85f-413e-86ea-880fe698c970)
+
+---
+
+## Design Principles
+
+- **Free from Restrictive Licensing:** Avoids proprietary tools and restrictive licenses.
+- **Commercial API Use:** Integrates commercial APIs (e.g., Tavily for web searching) only when necessary and ensures open alternatives are available.
+- **Local Execution:** Enables local execution without requiring network access where possible.
+- **Efficient Storage:** Stores all data locally to avoid redundant downloads and generation.
+- **Robust Infrastructure:** Utilizes PostgreSQL with pgvector extension and local file systems for all storage needs, without relying on external servers or services.
+
+---
+
+**Join us in developing these tools to enhance medical research while maintaining privacy and independence.**
+
+---
+
+  ![image](https://github.com/hherb/MedAiTools/assets/15961294/0dbb1388-5796-4c15-8de5-ed9cc0a12ea7)
+
+
