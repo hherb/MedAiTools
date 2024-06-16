@@ -9,13 +9,17 @@
 
 - **Upload and Query:** Upload PDF files and query your data using natural language.
 - **Document Interrogation:** Interrogate a single document, a list of documents, or all documents stored in the database.
-- **High-Quality Summaries:** Provides abstractive summaries of texts of any length and re-ranks retrieved documents according to user preferences and domain relevance.
 - **Purpose:** To provide AI-driven answers grounded in attributable sources, with easy updates and extensibility.
+
+  
+  ![image](https://github.com/hherb/MedAiTools/assets/15961294/82ef7b87-4faf-4aef-9bad-21b28f6c4857)
+
 
 ## MedRxivScraper
 **Automated System for Fetching and Summarizing Pre-Publications**
 
 - **Background Fetching:** Automatically fetches new publications and their associated full papers from medRxiv and ingests them into the knowledge base.
+- **High-Quality Summaries:** Provides abstractive summaries of texts of any length and re-ranks retrieved documents according to user preferences and domain relevance.
 - **User-Configurable Interest:** Presents new papers of interest with titles and summaries based on user-configurable criteria in natural language.
 - **Integration with Librarian:** A single click or keystroke opens the document for interrogation.
 - **Purpose:** To establish an automated "news service" that presents the latest pre-publications along with AI-generated critiques.
