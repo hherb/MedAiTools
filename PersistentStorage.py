@@ -27,27 +27,46 @@ from pprint import pprint
 from psycopg_pool import ConnectionPool
 from psycopg import sql, errors
 from psycopg.rows import dict_row
+
+from llama_index.core import (
+    Settings,
+    VectorStoreIndex,
+    SimpleDirectoryReader,
+    StorageContext,
+    load_index_from_storage,
+)
+
+from llama_index.core import VectorStoreIndex
+from llama_index.vector_stores.postgres import PGVectorStore
+
 import PDFParser
+from medai.Settings import Settings as MedAISettings
+
+s = MedAISettings()
 
 #hack, so that we don't have to explicity import dict_row from psycopg in the calling module (in case our abstraction changes away from psycopg)
 dict_row=dict_row
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+    
 
 class PersistentStorage:
+    """Base class for a PostgreSQL connection pool"""
 
     def __init__(self,  
-                 storage_directory="./library", #this is where we store blobs, eg PDF files
+                 storage_directory=s.STORAGE.PUBLICATION_DIR, #this is where we store blobs, eg PDF files
                  server_url=None, #the connection string to log into our postgresql server (DBAPI 2 compliant)
-                 min_size= 1, max_size=10, #size of our connection pool
-                 schema_migration_file=None #if stated, this file will be used to migrate the database schema
+                 min_size= 1, max_size=8, #size of our connection pool
+                 schema_migration_file=None, #if stated, this file will be used to migrate the database schema
                  ):
         """
         Abstracts PostgreSQL interactions, maintains a connectio to the PostgreSQL server
         and provides often used functionality in simple class methods.
-        Requires server connection paarmeters as enironment variables (fetches them from from .env if exists)
+        Requires server connection parameters as via our configuration file
+        but is overriden by environment variables (fetches them from from .env if exists)
+        
         :param storage_directory: str, the directory to store static files
         :param server_url: str, the connection URL to the PostgreSQL server
         :param min_size: int, the minimum number of connections in the connection pool
@@ -70,8 +89,7 @@ class PersistentStorage:
         if schema_migration_file:
             self.migrate_schema(schema_migration_file)
 
-
-
+        
     def migrate_schema(self, schema_migration_file : str ):
         """
         Migrate the database schema using a SQL file.
@@ -84,8 +102,12 @@ class PersistentStorage:
             conn.execute(schema)
         logger.info("Database schema migrated successfully.")
 
-
-    def connection_url(self, host : str ='localhost', port : int =5432, dbname : str ='medai', user : str ='medai', password : str ='medai') -> str:
+    def connection_url(self, 
+                       host : str = s.STORAGE.HOST,  
+                       port : int = s.STORAGE.PORT, 
+                       dbname : str =s.STORAGE.DBNAME, 
+                       user : str = s.DBUSER, 
+                       password : str = s.DBPASS) -> str:
         """
         Create a connection URL to the PostgreSQL server.
         It will always prioritize settings from environment variables over the default values,
@@ -136,7 +158,7 @@ class PersistentStorage:
         """Close all connections in the pool."""
         logger.info("Closing all connections in the PostgreSQL connection pool.")
         try:
-            self.connection_pool.closeall()
+            self.connection_pool.close()
         except Exception as e:
             logger.error(f"Could not close all connections in the PostgreSQL connection pool. Error: {e}")
 
@@ -144,19 +166,149 @@ class PersistentStorage:
         self.close_all_connections()
 
     
+class VectorStorage(PersistentStorage):
+    """
+    A LlamaIndex vector store & indexing system using PostgreSQL as backend
+    """
+
+    def __init__(self, 
+                 storage_directory=s.STORAGE.PUBLICATION_DIR, #this is where we store blobs, eg PDF files
+                 server_url=None, #the connection string to log into our postgresql server (DBAPI 2 compliant)
+                 min_size= 1, max_size=10, #size of our connection pool
+                 schema_migration_file=None #if stated, this file will be used to migrate the database schema
+                 ):
+        super().__init__(storage_directory=storage_directory, server_url=server_url, min_size=min_size, max_size=max_size, schema_migration_file=schema_migration_file)
+        self.vector_store = None
+        self.storage_context = None
+        self.initiate_vector_store()
+    
+
+    def initiate_hybrid_vector_store(self):
+        """
+        Initiate the hybrid vector store. Create it if it doesn't exist yet, else load it from storage.
+        """
+        self.llamaindex_settings = Settings
+        self.llm = LLM.get_local_32k_model()
+        self.EMBEDDING_MODEL = EMBEDDING_MODEL
+        self.EMBEDDING_DIMENSIONS = EMBEDDING_DIMENSIONS
+        self.hybrid_index = None
+        self.callback=callback
+        self.last_ingested = None #the most recent document ingested into the index
+
+        #set up our embedding model. It will be downloaded into a local cache directory 
+		#if it doesn't exist locally yet. For this, an internet connection would be required
+        self._logger.info("loading the embedding model")
+        self._embedding_model = HuggingFaceEmbedding(model_name=self.EMBEDDING_MODEL)
+        #self._embedding_model = FastEmbedEmbedding(model_name=self.EMBEDDING_MODEL)
+        self.llamaindex_settings.embed_model = self._embedding_model
+
+        self.llamaindex_settings.chunk_size = 512  #preliminary hack - we'll change that when we use more sophisticated / semantic chunking methods
+        self.llamaindex_settings.batch_size = 20  # batch_size controls how many nodes are encoded with sparse vectors at once
+        self.llamaindex_settings.enable_hybrid = True  # create our vector store with hybrid indexing enabled
+        self.llamaindex_settings.enable_sparse = True
+
+        self.llamaindex_settings.llm = self.llm
+        self._logger.info("setting up the vector store")
+        self.initiate_hybrid_vector_store()
+        self._logger.info("setting the storage context")
+    
+        Settings.chunk_size = 512
+        self._logger.info("preparing the vector index")
+        self.hybrid_index = VectorStoreIndex.from_vector_store(embed_model=self._embedding_model, vector_store = self.hybrid_vector_store, storage_context=self.storage_context)
+        self.hybrid_vector_store = PGVectorStore.from_params(
+            database='medai',
+            host='localhost',
+            password='thisismedai',
+            port=5432,
+            user='medai',
+            table_name="RAGLibrarian",
+            embed_dim=self.EMBEDDING_DIMENSIONS,
+            hybrid_search=True,
+            text_search_config="english",
+        )
+        self.storage_context = StorageContext.from_defaults(
+            vector_store=self.hybrid_vector_store
+        )
+        #try and load the index, if it exists
+        try:
+            self.hybrid_index = VectorStoreIndex.from_vector_store(embed_model=self._embedding_model, vector_store = self.hybrid_vector_store, storage_context=self.storage_context)
+        except Exception as e:
+            self._logger.info("failed to activate hybrid index, not initialized yet?")
+            self._logger.info(e)
+            self.hybrid_index = None
+
+
+    def _ingest(self, pdfpath, force=False) -> str:
+        """
+        Ingest a PDF file into the hydrid store
+        :pdfpath (str): The path to the PDF file
+        :force (bool): Whether to force re-ingestion of the file
+        :return: str, the path to the ingested file
+        """
+        if self.db.file_is_ingested(os.path.basename(pdfpath)) and not force:
+            print(f"{pdfpath} has already been ingested")
+            return(pdfpath)
+        if not os.path.exists(pdfpath):
+            print(f"{pdfpath} does not exist")
+            return('')
+        self._logger.info(f"ingesting {pdfpath}") 
+        documents=PDFParser.pdf2llama(pdfpath)
+        self._logger.info(f"Loaded {len(documents)} nodes from {pdfpath}, indexing now ....")
+        self.hybrid_index = VectorStoreIndex.from_documents(documents, embed_model=self._embedding_model, storage_context=self.storage_context)
+        self._logger.info(f"Indexing of {pdfpath} complete") 
+        return(pdfpath)
+
+    def get_query_engine(self, top_k=5, pdfpath=None):
+        """Get a query engine for the RAG
+        Args:
+            top_k (int): The number of documents to retrieve
+            pdfpath (str): The path to the PDF file to filter metadata by
+        Returns:
+            RetrieverQueryEngine: The query engine
+        """
+        if self.hybrid_index is None:
+            print("Index not initialized yet, loading from storage ...")
+            self.hybrid_index = load_index_from_storage(self.storage_context)
+        metafilters = []
+        if pdfpath is not None:
+            print(f"-----> METADATA FILTER FOR file_name = {os.path.basename(pdfpath)}")
+            metafilters = MetadataFilters(
+                filters=[
+                    MetadataFilter(key="file_name", value=os.path.basename(pdfpath)),
+                ],
+            )
+        # configure retriever
+        retriever = VectorIndexRetriever(
+            index=self.hybrid_index,
+            similarity_top_k=top_k,
+            vector_store_kwargs={"hnsw_ef_search": 300},
+            filters=metafilters,
+        )
+        # configure response synthesizer
+        response_synthesizer = get_response_synthesizer(
+            response_mode="tree_summarize",
+        )
+        # configure query engine
+        query_engine = RetrieverQueryEngine(
+            retriever=retriever,
+            response_synthesizer=response_synthesizer,
+        )
+        return query_engine
+
+
     
 class PublicationStorage(PersistentStorage):
     """
     A persistent storage backend for MedrXiv publications
     """
     def __init__(self,  
-                 storage_directory="./library", #this is where we store blobs, eg PDF files
+                 storage_directory=s.STORAGE.PUBLICATION_DIR, #this is where we store blobs, eg PDF files
                  server_url=None, #the connection string to log into our postgresql server (DBAPI 2 compliant)
                  min_size= 1, max_size=10, #size of our connection pool
                  schema_migration_file=None #if stated, this file will be used to migrate the database schema
                  ):
         """
-        Abstracts PostgreSQL interactions, maintains a connectio to the PostgreSQL server
+        Abstracts PostgreSQL interactions, maintains a connection to the PostgreSQL server
         and provides often used functionality in simple class methods.
         Requires server connection paarmeters as enironment variables (fetches them from from .env if exists)
         :param storage_directory: str, the directory to store static files
@@ -441,6 +593,9 @@ class PublicationStorage(PersistentStorage):
                 for publication in tqdm(cursor, total=rowcount):
                     yield dict(publication)
    
+    def _ingest(self, pdfpath: str):
+        return(self.getRAG().ingest(pdfpath))
+    
     def ingest_pdf(self, pdfpath: str, force=False):
         """Ingest a PDF file into the database
         :param pdfpath: str, the path to the PDF file
@@ -451,10 +606,12 @@ class PublicationStorage(PersistentStorage):
             logger.info(f"PDF file [{pdf_fname}] has already been ingested.")
             if force:
                 #TODO: remove the existing record and re-ingest
-                logger.info(f"Re-ingesting PDF file [{pdf_fname}] ...")
+                logger.info(f"Re-ingesting PDF file [{pdf_fname}] with _ingest...")
+                return self._ingest(pdfpath)
             else:
                 return(pdfpath)
-            markdown = ""
+        logger.info(f"Re-ingesting PDF file [{pdf_fname}] with _ingest...")
+        return self._ingest(pdfpath)
 
 if __name__ == "__main__":
     from pprint import pprint
@@ -484,3 +641,5 @@ if __name__ == "__main__":
     # news = pg.list_newest_versions()s
     # for n in news:
     #     pprint(n)
+
+    

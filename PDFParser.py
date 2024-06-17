@@ -75,7 +75,7 @@ def pdf2md(pdf_filename: str, output_md_filename: str = None, method : str ="pym
         raise ValueError(f"Unknown method: {method}")
     if method == "pymupdf4llm":
         try:
-            logging.info(f"Calling pymupdf4llm with  {pdf_filename} to markdown")
+            logging.warning(f"Calling pymupdf4llm with  {pdf_filename} to markdown")
             try:
                 markdown_text = run_with_timeout(pymupdf4llm.to_markdown, 60, pdf_filename) #give it 60 seconds to coplete, else abort
             except Exception as e:
@@ -83,7 +83,7 @@ def pdf2md(pdf_filename: str, output_md_filename: str = None, method : str ="pym
                 #move file to error folder
                 shutil.move(pdf_filename, os.path.join(os.path.dirname(pdf_filename), "failed", os.path.basename(pdf_filename))) 
             #markdown_text = pymupdf4llm.to_markdown(pdf_filename)
-            logging.info(f"Finished converting {pdf_filename} to markdown")
+            logging.warning(f"Finished converting {pdf_filename} to markdown")
         except Exception as e:
             logging.error(f"Error converting {pdf_filename} to markdown: {e}")
             return None

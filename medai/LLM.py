@@ -14,30 +14,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Ths model provides a temprary abstraction for LLM services.
-It will soon be deprecated in favour of something like liteLLM"""
+"""This model provides a temprary abstraction for LLM services.
+It is likely to still change over time"""
 
 import os
 import litellm
 from dotenv import load_dotenv
 import logging
+from Settings import Settings
 
-LOCAL_LLM_API_BASE="http://localhost:11434/v1"
-LOCAL_DEFAULT_MODEL="openai/MaziyarPanahi/Llama-3-8B-Instruct-32k-v0.1-GGUF"
-LOCAL_32K_MODEL="openai/MaziyarPanahi/Llama-3-8B-Instruct-32k-v0.1-GGUF"
-LOCAL_LLM_API_KEY="lm_studio"
+s = Settings()
+# LOCAL_LLM_API_BASE=s.LOCAL_LLM_API_BASE
+# LOCAL_DEFAULT_MODEL=s.LOCAL_DEFAULT_MODEL
+# LOCAL_32K_MODEL=s.LOCAL_32K_MODEL
+# LOCAL_LLM_API_KEY=s.LOCAL_LLM_API_KEY
 
-OPENAI_API_BASE="https://api.openai.com/v1"
-OPENAI_MULTIMODAL_MODEL="gpt-4o"
+# OPENAI_API_BASE=s.LOCAL_LLM_API_BASE
+# OPENAI_MULTIMODAL_MODEL=s.LLM.OPENAI_MULTIMODAL_MODEL
 
 # Set the logging level for litellm to ERROR to reduce output
 logging.getLogger('LiteLLM').setLevel(logging.ERROR)
 logging.getLogger('httpx').setLevel(logging.ERROR)
 
 class Model:
-    def __init__(self, model=LOCAL_DEFAULT_MODEL, 
-                api_key=LOCAL_LLM_API_KEY,
-                api_base=LOCAL_LLM_API_BASE,
+    def __init__(self, modelname=s.LLM.LOCAL_DEFAULT_MODEL, 
+                api_key=s.APIKEYS.LOCAL_LLM_API_KEY,
+                api_base=s.LLM.LOCAL_LLM_API_BASE,
                 system_prompt="You are a medical profesional answering fellow medical professionals. Be truthful, terse and concise. Just answer the question without further comments nor introductions.",
                 temperature=0.3,
                 max_tokens=4000,
@@ -45,8 +47,9 @@ class Model:
                 repeat_penalty=0.0,
                 presence_penalty=0.0,
                 stop=None, 
-                ):       
-        self.model = model
+                ):  
+        self.settings= Settings()     
+        self.modelname = modelname
         self.api_key = api_key
         self.api_base = api_base
         self.system_prompt = system_prompt
@@ -57,7 +60,7 @@ class Model:
         self.stop = stop
 
     def get_model(self):
-        return self.model
+        return self.modelname
 
     def get_api_key(self):
         return self.api_key
@@ -84,8 +87,8 @@ class Model:
     def get_stop(self):
         return self.stop
 
-    def set_model(self, model):
-        self.model = model
+    def set_model(self, modelname):
+        self.modelname = modelname
 
     def set_api_key(self, api_key):
         self.api_key = api_key
@@ -114,15 +117,17 @@ class Model:
 
 
 def get_local_default_model():
-    return Model(model=LOCAL_DEFAULT_MODEL, api_key=LOCAL_LLM_API_KEY, api_base=LOCAL_LLM_API_BASE, temperature=0.3, max_tokens=4096, frequency_penalty=0.0, presence_penalty=0.0, stop=None)
+    return Model(modelname=s.LLM.LOCAL_DEFAULT_MODEL, api_key=s.APIKEYS.LOCAL_LLM_API_KEY, api_base=s.LLM.LOCAL_LLM_API_BASE, temperature=0.3, max_tokens=4096, frequency_penalty=0.0, presence_penalty=0.0, stop=None)
 
 def get_local_32k_model():
-    return Model(model=LOCAL_32K_MODEL, api_key=LOCAL_LLM_API_KEY, api_base=LOCAL_LLM_API_BASE, temperature=0.3, max_tokens=32000, frequency_penalty=0.0, presence_penalty=0.0, stop=None)
+    return Model(modelname=s.LLM.LOCAL_32K_MODEL, api_key=s.APIKEYS.LOCAL_LLM_API_KEY, api_base=s.LLM.LOCAL_LLM_API_BASE, temperature=0.3, max_tokens=32000, frequency_penalty=0.0, presence_penalty=0.0, stop=None)
 
-def get_openai_multimodal_model():
-    load_dotenv()  #load the environment variables
-    api_key=os.getenv('OPENAI_API_KEY')
-    return Model(model=OPENAI_MULTIMODAL_MODEL, api_key=api_key, api_base=OPENAI_API_BASE, temperature=0.3, max_tokens=4096, frequency_penalty=0.0, presence_penalty=0.0, stop=None)
+def get_openai_multimodal_model(apikey=None):
+    api_key=apikey
+    if not api_key:
+        load_dotenv()  #load the environment variables
+        api_key=os.getenv('OPENAI_API_KEY')
+    return Model(modelname=s.LLM.OPENAI_MULTIMODAL_MODEL, api_key=api_key, api_base=s.LLM.OPENAI_API_BASE, temperature=0.3, max_tokens=4096, frequency_penalty=0.0, presence_penalty=0.0, stop=None)
 
 class LLM: 
     def __init__(self, model,

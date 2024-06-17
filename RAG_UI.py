@@ -1,6 +1,7 @@
 import panel as pn
 from panel.chat import ChatInterface
 from RAG import RAG
+import os, os.path
 
 pn.extension('texteditor', notifications=True, loading_indicator=True, design="material")
 
@@ -76,7 +77,7 @@ class PDFPanel(pn.viewable.Viewer):
                 with open(filepath, "wb") as f:
                     f.write(self.file_input.value)
                     #if the file didn't exist yet, it needs to be ingested ...
-                    
+
                     self.RAG.ingest(filepath)
             #"""set the PDF viewer to display the uploaded file""" 
             self.set_pdf(filepath)  
