@@ -1,4 +1,4 @@
-from medai.LLM import LLM, Model, get_local_32k_model, get_local_default_model, get_openai_multimodal_model
+from medai.LLM import LLM, get_local_32k_model, get_local_default_model, get_openai_multimodal_model
 
 TEXTTYPES=("SHORT", "LONG", "VERY_LONG")
 

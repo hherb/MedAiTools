@@ -1,35 +1,7 @@
-import os
 import os.path
 import logging
 
-from llama_index.core import (
-    Settings,
-    VectorStoreIndex,
-    SimpleDirectoryReader,
-    StorageContext,
-    load_index_from_storage,
-)
-
-from llama_index.core import VectorStoreIndex, get_response_synthesizer
-from llama_index.core.retrievers import VectorIndexRetriever
-from llama_index.core.query_engine import RetrieverQueryEngine
-
-from llama_index.core.vector_stores.types import (
-    MetadataFilter,
-    MetadataFilters,
-)
-
-# we use  one of the embedding models stored at HuggingFAce
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-#from llama_index.embeddings.fastembed import FastEmbedEmbedding
-from llama_index.llms.litellm import LiteLLM
-from medai.LLM import LOCAL_DEFAULT_MODEL, LOCAL_LLM_API_KEY, LOCAL_LLM_API_BASE
-
-
-
 from PersistentStorage import PublicationStorage, VectorStorage
-import PDFParser
-
 class RAG:
     """
     A simple implementation of the RAG (Retrieval Augmented Generation) model
@@ -54,7 +26,6 @@ class RAG:
         """
         self.last_ingested = self.vdb.ingest(pdfpath, force=force)
 
-
     def query(self, question, pdfpath=None, top_k=5):
         """Query the RAG
         Args:
@@ -64,7 +35,7 @@ class RAG:
         Returns:
             str: The response to the question
         """
-        print(f"-----> running query [{question}] with pdfpath=[{pdfpath}]")
+        #print(f"-----> running query [{question}] with pdfpath=[{pdfpath}]")
         query_engine= self.vdb.get_query_engine(top_k=top_k, pdfpath=pdfpath)
         response = query_engine.query(question)
         return response

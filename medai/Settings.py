@@ -14,9 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import json
+import os
 import threading
 import logging
-import configparser
 
 class SingletonMeta(type):
     _instances = {}
@@ -29,84 +30,72 @@ class SingletonMeta(type):
                 cls._instances[cls] = instance
             return cls._instances[cls]
 
-class Section:
-    def __init__(self, options):
-        for option, value in options.items():
-            setattr(self, option, value)
-
 class Settings(metaclass=SingletonMeta):
     def __init__(self):
         try:
-            loaded_settings = self.load_settings()
-            if not loaded_settings:
-                loaded_settings = self.default_settings()
-            self.settings = {section: Section(options) for section, options in loaded_settings.items()}
+            print("loading ...")
+            self.settings = self.load_settings()
+            if not self.settings:
+                self.settings = self.default_settings()
         except Exception as e:
             logging.error(f"Error loading settings: {e}")
             self.settings = self.default_settings()
 
-    @staticmethod
-    def save_settings(settings, filename='medai.ini'):
-        config = configparser.ConfigParser()
-        for section, options in settings.items():
-            config[section] = {}
-            for option, value in options.items():
-                config[section][option] = str(value)    
-        with open(filename, 'w') as configfile:
-            config.write(configfile)
-            
-    @staticmethod
-    def load_settings(filename='medai.ini'):
-        config = configparser.ConfigParser()
-        config.read(filename)
-        settings = {section: dict(config.items(section)) for section in config.sections()}
-        return settings
+    def load_settings(self):
+        settings_path = os.path.join(os.path.expanduser('~'), '.medai.ini')
+        try:
+            with open(settings_path, 'r') as file:
+                return json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            logging.error(f"Error loading settings from {settings_path}: {e}")
+            return self.default_settings()
+
+    def save_settings(self, settings):
+        settings_path = os.path.join(os.path.expanduser('~'), '.medai.ini')
+        try:
+            with open(settings_path, 'w') as file:
+                json.dump(settings, file, indent=4)
+        except Exception as e:
+            logging.error(f"Error saving settings to {settings_path}: {e}")
 
     def __getattr__(self, name):
-        # This method is called if there isn't an attribute with the name
         try:
             return self.settings[name]
         except KeyError:
             raise AttributeError(f"'Settings' object has no attribute '{name}'")
-
-    @staticmethod
-    def default_settings():
+    
+    def default_settings(self):
         # Define your default settings here
         settings= {  
-            'APIKEYS' : {
-                'LOCAL_LLM_API_KEY' : 'lm_studio',
-                'OPENAI_API_KEY' : '',
-                'HUGGINGFACE_API_KEY' : '',
-                'GROQ_API_KEY' : '',
-                'SERPER_API_KEY' : '',
-                'TAVILY_API_KEY' : '',
-                'TAVILY_API_SECRET' : '',
-            },
+            #APIKEYS
+            'LOCAL_LLM_API_KEY' : 'lm_studio',
+            'OPENAI_API_KEY' : '',
+            'HUGGINGFACE_API_KEY' : '',
+            'GROQ_API_KEY' : '',
+            'SERPER_API_KEY' : '',
+            'TAVILY_API_KEY' : '',
+            'TAVILY_API_SECRET' : '',
 
-            'LLM' : {
-                'LOCAL_LLM_API_BASE' : 'http://localhost:11434/v1',
-                'LOCAL_DEFAULT_MODEL' : 'openai/MaziyarPanahi/Llama-3-8B-Instruct-32k-v0.1-GGUF',
-                'LOCAL_32K_MODEL' : 'openai/MaziyarPanahi/Llama-3-8B-Instruct-32k-v0.1-GGUF',
-                'LOCAL_128K_MODEL' : 'openai/Bartowski/Phi-3-medium-128k-Instruct-GGUF',
-                'LOCAL_LLM_API_KEY' : 'lm_studio',
-                'OPENAI_API_BASE' : 'https://api.openai.com/v1',
-                'OPENAI_MULTIMODAL_MODEL' : 'gpt-4o',
-            },
-
-            'EMBEDDING' : {
-                'EMBEDDING_MODEL' : 'BAAI/bge-m3',
-                'EMBEDDING_DIMENSIONS' : 1024,
-            },
-            
-            'STORAGE' : {
-                'LOCAL_STORAGE_DIR' : '~/medai',
-                'PUBLICATION_DIR' : '~/medai/publications',
-                'DBUSER' : 'medai',
-                'DBPASS' : 'thisismedai',
-                'DBNAME' : 'medai',
-                'HOST' : 'localhost',
-                'PORT' : 5432,
-                'RAGTABLE' : 'RAGLibrarian',
-            }
+            #LLM
+            'LOCAL_LLM_API_BASE' : 'http://localhost:11434/v1',
+            'LOCAL_DEFAULT_MODEL' : 'openai/MaziyarPanahi/Llama-3-8B-Instruct-32k-v0.1-GGUF',
+            'LOCAL_32K_MODEL' : 'openai/MaziyarPanahi/Llama-3-8B-Instruct-32k-v0.1-GGUF',
+            'LOCAL_128K_MODEL' : 'openai/Bartowski/Phi-3-medium-128k-Instruct-GGUF',
+            'LOCAL_LLM_API_KEY' : 'lm_studio',
+            'OPENAI_API_BASE' : 'https://api.openai.com/v1',
+            'OPENAI_MULTIMODAL_MODEL' : 'gpt-4o',
+            #EMBEDDING
+            'EMBEDDING_MODEL' : 'BAAI/bge-m3',
+            'EMBEDDING_DIMENSIONS' : 1024,
+            #STORAGE
+            'LOCAL_STORAGE_DIR' : '~/medai',
+            'PUBLICATION_DIR' : '~/src/github/MedAiTools/library',
+            'DBUSER' : 'medai',
+            'DBPASS' : 'thisismedai',
+            'DBNAME' : 'medai',
+            'HOST' : 'localhost',
+            'PORT' : 5432,
+            'RAGTABLE' : 'RAGLibrarian',
+        
         }
         return settings

@@ -5,25 +5,6 @@ import os, os.path
 
 pn.extension('texteditor', notifications=True, loading_indicator=True, design="material")
 
-# FAILED="""The study discussed in the provided context focuses on mapping the sub-national spatial variation in housing materials across low- and middle-income countries. It does not mention genetic subtypes in Alzheimer's disease."""
-
-# class RAG:
-#     def __init__(self):
-#         pass
-
-#     def ingest(self,filepath):
-#         print(f"RAG ingesting {filepath}")
-    
-#     def query(self,contents):
-#         print(f"RAG querying {contents}")
-#         return FAILED
-    
-#     def get_response(self,contents):
-#         return self.query(contents)
-
-# pn.extension('perspective', loading_indicator=True, design="material") 
-
-
 class PDFPanel(pn.viewable.Viewer):
     """
     A panel for displaying PDF files and querying the RAG
@@ -59,7 +40,6 @@ class PDFPanel(pn.viewable.Viewer):
 
         self.chat_bot.send("Ask me anything about this paper ...", user="Assistant", respond=False)
         self.panel=pn.Row(self.pdf_panel, self.chat_bot, sizing_mode='stretch_both')
-
 
 
     # Define a function to update the PDF widget based on the uploaded file       
@@ -123,21 +103,6 @@ class PDFPanel(pn.viewable.Viewer):
             self.displayed_pdf=filepath
             self.remember_ingestion(filepath)
             info.destroy()
-
-    def remember_ingestion(self,filepath):
-        """
-        avoid duplicate ingestion of the same PDF file
-        """
-        pass
-
-    def has_ben_ingested(self,filepath):
-        """
-        check if the PDF file has already been ingested
-    
-        Returns:
-            bool: True if the PDF file has already been ingested, False otherwise
-        """
-        return False
 
 if __name__ == "__main__":
     panel= PDFPanel()

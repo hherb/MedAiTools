@@ -23,7 +23,7 @@ import logging
 import sys
 import time
 from tqdm import tqdm
-from pprint import pprint
+
 from psycopg_pool import ConnectionPool
 from psycopg import sql, errors
 from psycopg.rows import dict_row
@@ -31,15 +31,25 @@ from psycopg.rows import dict_row
 from llama_index.core import (
     Settings,
     VectorStoreIndex,
-    SimpleDirectoryReader,
     StorageContext,
     load_index_from_storage,
+    get_response_synthesizer,
+)
+from llama_index.core.vector_stores.types import (
+    MetadataFilter,
+    MetadataFilters,
 )
 
-from llama_index.core import VectorStoreIndex
 from llama_index.vector_stores.postgres import PGVectorStore
+#from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+#from langchain.embeddings.huggingface import HuggingFaceBgeEmbeddings
+from llama_index.embeddings.huggingface_optimum import OptimumEmbedding
+
+from llama_index.core.retrievers import VectorIndexRetriever
+from llama_index.core.query_engine import RetrieverQueryEngine
 
 import PDFParser
+import medai.LLM
 from medai.Settings import Settings as MedAISettings
 
 s = MedAISettings()
@@ -56,7 +66,7 @@ class PersistentStorage:
     """Base class for a PostgreSQL connection pool"""
 
     def __init__(self,  
-                 storage_directory=s.STORAGE.PUBLICATION_DIR, #this is where we store blobs, eg PDF files
+                 storage_directory=s.PUBLICATION_DIR, #this is where we store blobs, eg PDF files
                  server_url=None, #the connection string to log into our postgresql server (DBAPI 2 compliant)
                  min_size= 1, max_size=8, #size of our connection pool
                  schema_migration_file=None, #if stated, this file will be used to migrate the database schema
@@ -103,9 +113,9 @@ class PersistentStorage:
         logger.info("Database schema migrated successfully.")
 
     def connection_url(self, 
-                       host : str = s.STORAGE.HOST,  
-                       port : int = s.STORAGE.PORT, 
-                       dbname : str =s.STORAGE.DBNAME, 
+                       host : str = s.HOST,  
+                       port : int = s.PORT, 
+                       dbname : str =s.DBNAME, 
                        user : str = s.DBUSER, 
                        password : str = s.DBPASS) -> str:
         """
@@ -172,15 +182,18 @@ class VectorStorage(PersistentStorage):
     """
 
     def __init__(self, 
-                 storage_directory=s.STORAGE.PUBLICATION_DIR, #this is where we store blobs, eg PDF files
+                 storage_directory=s.PUBLICATION_DIR, #this is where we store blobs, eg PDF files
                  server_url=None, #the connection string to log into our postgresql server (DBAPI 2 compliant)
                  min_size= 1, max_size=10, #size of our connection pool
                  schema_migration_file=None #if stated, this file will be used to migrate the database schema
                  ):
+        logging.warning("Initiating the vector store BEGIN...")
         super().__init__(storage_directory=storage_directory, server_url=server_url, min_size=min_size, max_size=max_size, schema_migration_file=schema_migration_file)
         self.vector_store = None
         self.storage_context = None
-        self.initiate_vector_store()
+        logging.info("Initiating the vector store ...")
+        self.initiate_hybrid_vector_store()
+        
     
 
     def initiate_hybrid_vector_store(self):
@@ -188,19 +201,20 @@ class VectorStorage(PersistentStorage):
         Initiate the hybrid vector store. Create it if it doesn't exist yet, else load it from storage.
         """
         self.llamaindex_settings = Settings
-        self.llm = LLM.get_local_32k_model()
-        self.EMBEDDING_MODEL = EMBEDDING_MODEL
-        self.EMBEDDING_DIMENSIONS = EMBEDDING_DIMENSIONS
+        self.llm = medai.LLM.get_local_32k_model()
+        self.EMBEDDING_MODEL = s.EMBEDDING_MODEL
+        self.EMBEDDING_DIMENSIONS = s.EMBEDDING_DIMENSIONS
         self.hybrid_index = None
-        self.callback=callback
         self.last_ingested = None #the most recent document ingested into the index
 
         #set up our embedding model. It will be downloaded into a local cache directory 
 		#if it doesn't exist locally yet. For this, an internet connection would be required
-        self._logger.info("loading the embedding model")
-        self._embedding_model = HuggingFaceEmbedding(model_name=self.EMBEDDING_MODEL)
+        logger.info(f"loading the embedding model {self.EMBEDDING_MODEL}")
+        #self._embedding_model = HuggingFaceEmbedding(model_name=self.EMBEDDING_MODEL)
         #self._embedding_model = FastEmbedEmbedding(model_name=self.EMBEDDING_MODEL)
-        self.llamaindex_settings.embed_model = self._embedding_model
+        Settings.embed_model = self._embedding_model= OptimumEmbedding(folder_name="./bge_onnx")
+        #self._embedding_model = HuggingFaceBgeEmbeddings(model_name=self.EMBEDDING_MODEL)
+        #self.llamaindex_settings.embed_model = self._embedding_model
 
         self.llamaindex_settings.chunk_size = 512  #preliminary hack - we'll change that when we use more sophisticated / semantic chunking methods
         self.llamaindex_settings.batch_size = 20  # batch_size controls how many nodes are encoded with sparse vectors at once
@@ -208,12 +222,12 @@ class VectorStorage(PersistentStorage):
         self.llamaindex_settings.enable_sparse = True
 
         self.llamaindex_settings.llm = self.llm
-        self._logger.info("setting up the vector store")
+        logger.info("setting up the vector store")
         self.initiate_hybrid_vector_store()
-        self._logger.info("setting the storage context")
+        logger.info("setting the storage context")
     
         Settings.chunk_size = 512
-        self._logger.info("preparing the vector index")
+        logger.info("preparing the vector index")
         self.hybrid_index = VectorStoreIndex.from_vector_store(embed_model=self._embedding_model, vector_store = self.hybrid_vector_store, storage_context=self.storage_context)
         self.hybrid_vector_store = PGVectorStore.from_params(
             database='medai',
@@ -233,8 +247,8 @@ class VectorStorage(PersistentStorage):
         try:
             self.hybrid_index = VectorStoreIndex.from_vector_store(embed_model=self._embedding_model, vector_store = self.hybrid_vector_store, storage_context=self.storage_context)
         except Exception as e:
-            self._logger.info("failed to activate hybrid index, not initialized yet?")
-            self._logger.info(e)
+            logger.info("failed to activate hybrid index, not initialized yet?")
+            logger.info(e)
             self.hybrid_index = None
 
 
@@ -251,11 +265,11 @@ class VectorStorage(PersistentStorage):
         if not os.path.exists(pdfpath):
             print(f"{pdfpath} does not exist")
             return('')
-        self._logger.info(f"ingesting {pdfpath}") 
+        logger.info(f"ingesting {pdfpath}") 
         documents=PDFParser.pdf2llama(pdfpath)
-        self._logger.info(f"Loaded {len(documents)} nodes from {pdfpath}, indexing now ....")
+        logger.info(f"Loaded {len(documents)} nodes from {pdfpath}, indexing now ....")
         self.hybrid_index = VectorStoreIndex.from_documents(documents, embed_model=self._embedding_model, storage_context=self.storage_context)
-        self._logger.info(f"Indexing of {pdfpath} complete") 
+        logger.info(f"Indexing of {pdfpath} complete") 
         return(pdfpath)
 
     def get_query_engine(self, top_k=5, pdfpath=None):
@@ -302,7 +316,7 @@ class PublicationStorage(PersistentStorage):
     A persistent storage backend for MedrXiv publications
     """
     def __init__(self,  
-                 storage_directory=s.STORAGE.PUBLICATION_DIR, #this is where we store blobs, eg PDF files
+                 storage_directory=s.PUBLICATION_DIR, #this is where we store blobs, eg PDF files
                  server_url=None, #the connection string to log into our postgresql server (DBAPI 2 compliant)
                  min_size= 1, max_size=10, #size of our connection pool
                  schema_migration_file=None #if stated, this file will be used to migrate the database schema
