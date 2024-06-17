@@ -41,14 +41,14 @@ import markdown
 from medai.tools.apikeys import load_api_keys  
 
 import concurrent.futures
-import time
+
 
 LLMSHERPA_API_URL = "http://localhost:5010/api/parseDocument?renderFormat=all" #&useNewIndentParser=true" "&applyOcr=yes"
 
 PARSEMETHODS=("llamaparse", "llmsherpa", "pymupdf4llm")
 
 # Configure logging
-logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
+#logging.basicConfig(level=logging.info, format='%(asctime)s - %(levelname)s - %(message)s')
 
 #this is a hack  - pymupdf4llm has a bug that causes it to hang on parsing some pdfs
 #until this is fixed, we'll enforce a timeout on that function so that the app continues working

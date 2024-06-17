@@ -42,8 +42,8 @@ from llama_index.core.vector_stores.types import (
 
 from llama_index.vector_stores.postgres import PGVectorStore
 #from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-#from langchain.embeddings.huggingface import HuggingFaceBgeEmbeddings
-from llama_index.embeddings.huggingface_optimum import OptimumEmbedding
+from langchain.embeddings.huggingface import HuggingFaceBgeEmbeddings
+#from llama_index.embeddings.huggingface_optimum import OptimumEmbedding
 
 from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.core.query_engine import RetrieverQueryEngine
@@ -53,6 +53,7 @@ import medai.LLM
 from medai.Settings import Settings as MedAISettings
 
 s = MedAISettings()
+HuggingFaceBgeEmbeddings(model_name=s.EMBEDDING_MODEL)
 
 #hack, so that we don't have to explicity import dict_row from psycopg in the calling module (in case our abstraction changes away from psycopg)
 dict_row=dict_row
@@ -187,8 +188,11 @@ class VectorStorage(PersistentStorage):
                  min_size= 1, max_size=10, #size of our connection pool
                  schema_migration_file=None #if stated, this file will be used to migrate the database schema
                  ):
-        logging.warning("Initiating the vector store BEGIN...")
-        super().__init__(storage_directory=storage_directory, server_url=server_url, min_size=min_size, max_size=max_size, schema_migration_file=schema_migration_file)
+        super().__init__(storage_directory=storage_directory,
+                          server_url=server_url, 
+                          min_size=min_size, 
+                          max_size=max_size, 
+                          schema_migration_file=schema_migration_file)
         self.vector_store = None
         self.storage_context = None
         logging.info("Initiating the vector store ...")
@@ -209,13 +213,13 @@ class VectorStorage(PersistentStorage):
 
         #set up our embedding model. It will be downloaded into a local cache directory 
 		#if it doesn't exist locally yet. For this, an internet connection would be required
-        logger.info(f"loading the embedding model {self.EMBEDDING_MODEL}")
+        logger.warning(f"loading the embedding model {self.EMBEDDING_MODEL}")
         #self._embedding_model = HuggingFaceEmbedding(model_name=self.EMBEDDING_MODEL)
         #self._embedding_model = FastEmbedEmbedding(model_name=self.EMBEDDING_MODEL)
-        Settings.embed_model = self._embedding_model= OptimumEmbedding(folder_name="./bge_onnx")
-        #self._embedding_model = HuggingFaceBgeEmbeddings(model_name=self.EMBEDDING_MODEL)
-        #self.llamaindex_settings.embed_model = self._embedding_model
-
+        #Settings.embed_model = self._embedding_model= OptimumEmbedding(folder_name="./bge_onnx")
+        self._embedding_model = HuggingFaceBgeEmbeddings(model_name=s.EMBEDDING_MODEL)
+        self.llamaindex_settings.embed_model = self._embedding_model
+        logger.warning("setting up the vector store ,,,,,,,,,")
         self.llamaindex_settings.chunk_size = 512  #preliminary hack - we'll change that when we use more sophisticated / semantic chunking methods
         self.llamaindex_settings.batch_size = 20  # batch_size controls how many nodes are encoded with sparse vectors at once
         self.llamaindex_settings.enable_hybrid = True  # create our vector store with hybrid indexing enabled
@@ -223,12 +227,11 @@ class VectorStorage(PersistentStorage):
 
         self.llamaindex_settings.llm = self.llm
         logger.info("setting up the vector store")
-        self.initiate_hybrid_vector_store()
+    
         logger.info("setting the storage context")
     
         Settings.chunk_size = 512
-        logger.info("preparing the vector index")
-        self.hybrid_index = VectorStoreIndex.from_vector_store(embed_model=self._embedding_model, vector_store = self.hybrid_vector_store, storage_context=self.storage_context)
+       
         self.hybrid_vector_store = PGVectorStore.from_params(
             database='medai',
             host='localhost',
@@ -245,14 +248,16 @@ class VectorStorage(PersistentStorage):
         )
         #try and load the index, if it exists
         try:
-            self.hybrid_index = VectorStoreIndex.from_vector_store(embed_model=self._embedding_model, vector_store = self.hybrid_vector_store, storage_context=self.storage_context)
+            self.hybrid_index = VectorStoreIndex.from_vector_store(embed_model=self._embedding_model, 
+                                                                   vector_store = self.hybrid_vector_store, 
+                                                                   storage_context=self.storage_context)
         except Exception as e:
             logger.info("failed to activate hybrid index, not initialized yet?")
             logger.info(e)
             self.hybrid_index = None
 
 
-    def _ingest(self, pdfpath, force=False) -> str:
+    def ingest(self, pdfpath, force=False) -> str:
         """
         Ingest a PDF file into the hydrid store
         :pdfpath (str): The path to the PDF file
