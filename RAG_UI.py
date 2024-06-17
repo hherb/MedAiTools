@@ -71,9 +71,15 @@ class PDFPanel(pn.viewable.Viewer):
         if event.new:   
             print(f"PDF file name = {self.file_input.filename}")  
             filepath="./library/"+self.file_input.filename
-            with open(filepath, "wb") as f:
-                f.write(self.file_input.value) 
-                self.set_pdf(filepath)  
+            #"""if the file does not exist, write the uploaded file to the library folder"""
+            if not os.path.exists(filepath):
+                with open(filepath, "wb") as f:
+                    f.write(self.file_input.value)
+                    #if the file didn't exist yet, it needs to be ingested ...
+                    
+                    self.RAG.ingest(filepath)
+            #"""set the PDF viewer to display the uploaded file""" 
+            self.set_pdf(filepath)  
 
                 
 

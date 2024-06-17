@@ -22,6 +22,7 @@ class InterrogateUI():
             self.pdf_pane.object = filepath
             #pdf_pane.object = event.new                                                       
             study_critique = sc.StudyCritique()
+            #self.critique_panel.object = study_critique.pdf2document(filepath)
             text = study_critique.pdf2document(filepath)
             summary=study_critique.summary(text)
             critique=study_critique.critique(text)

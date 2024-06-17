@@ -28,6 +28,10 @@ from medai.LLM import LOCAL_DEFAULT_MODEL, LOCAL_LLM_API_KEY, LOCAL_LLM_API_BASE
 from llama_index.vector_stores.postgres import PGVectorStore
 
 from PersistentStorage import PublicationStorage
+import PDFParser
+
+
+
 
 class RAG:
     """
@@ -121,7 +125,8 @@ class RAG:
         if not os.path.exists(pdfpath):
             print(f"{pdfpath} does not exist")
             return
-        documents = SimpleDirectoryReader(input_files=[pdfpath,]).load_data()
+        #documents = SimpleDirectoryReader(input_files=[pdfpath,]).load_data()
+        documents=PDFParser.pdf2llama(pdfpath)
         print(f"Loaded {len(documents)} documents, indexing now ....")
         self.hybrid_index = VectorStoreIndex.from_documents(documents, embed_model=self._embedding_model, storage_context=self.storage_context)
         print(f"Indexing complete")

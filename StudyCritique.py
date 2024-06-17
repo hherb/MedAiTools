@@ -55,6 +55,11 @@ RERANK_BY_RELEVANCE_PROMPT = """You are a senior doctor working in Emergency Med
 	
 SUMMARY_PROMPT = """summarize the following document into a maximum of {n_sentences}.
 				 Pay attention not to miss any details of importance in the summary. 
+				 Write in a concise and clear manner.
+				 Write an introductory sentence of what this study is about and then list the key findings as dot points in html format (<li> ...</li>).
+				 If you notice any SIGNIFICANT flaws in argumentation or study design, please mention as dot points in html format (<li> ...</li>). 
+				 End with a concluding sentence.
+				 
 				 Here is the document: """
 	                        
 					                           																			
@@ -76,7 +81,7 @@ class StudyCritique:
 	
 	def pdf2document(self, pdf_file):
 		if pdf_file is not None:
-			doc = PDFParser.parse(pdf_file)
+			doc = PDFParser.pdf2md(pdf_file)
 			return(doc)
 		else:
 			print("ERROR: empty document sent for conversion")

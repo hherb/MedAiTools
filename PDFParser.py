@@ -26,6 +26,7 @@ conversion service without having to change further source code depnding on this
 
 import os
 import re
+import pathlib
 from tqdm import tqdm
 import asyncio
 import aiofiles
@@ -39,12 +40,26 @@ from weasyprint import HTML #needed to covert html into markdown
 import markdown
 from medai.tools.apikeys import load_api_keys  
 
+import concurrent.futures
+import time
+
 LLMSHERPA_API_URL = "http://localhost:5010/api/parseDocument?renderFormat=all" #&useNewIndentParser=true" "&applyOcr=yes"
 
 PARSEMETHODS=("llamaparse", "llmsherpa", "pymupdf4llm")
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
+
+#this is a hack  - pymupdf4llm has a bug that causes it to hang on parsing some pdfs
+#until this is fixed, we'll enforce a timeout on that function so that the app continues working
+def run_with_timeout(func, timeout, *args, **kwargs):
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future = executor.submit(func, *args, **kwargs)
+        try:
+            return future.result(timeout=timeout)
+        except concurrent.futures.TimeoutError:
+            return "Function timed out"
+        
 
 def pdf2md(pdf_filename: str, output_md_filename: str = None, method : str ="pymupdf4llm", remove_all_line_numbers=True):
     """Convert a PDF file to markdown text
@@ -55,11 +70,20 @@ def pdf2md(pdf_filename: str, output_md_filename: str = None, method : str ="pym
         :param remove_all_line_numbers: If True, remove all line numbers from the text
         :return: The markdown text
     """
+    markdown_text=None
     if method not in PARSEMETHODS:
         raise ValueError(f"Unknown method: {method}")
     if method == "pymupdf4llm":
         try:
-            markdown_text = pymupdf4llm.to_markdown(pdf_filename)
+            logging.info(f"Calling pymupdf4llm with  {pdf_filename} to markdown")
+            try:
+                markdown_text = run_with_timeout(pymupdf4llm.to_markdown, 60, pdf_filename) #give it 60 seconds to coplete, else abort
+            except Exception as e:
+                logging.error(f"Error converting {pdf_filename} to markdown: {e}, moving pdf to 'failed' folder")
+                #move file to error folder
+                shutil.move(pdf_filename, os.path.join(os.path.dirname(pdf_filename), "failed", os.path.basename(pdf_filename))) 
+            #markdown_text = pymupdf4llm.to_markdown(pdf_filename)
+            logging.info(f"Finished converting {pdf_filename} to markdown")
         except Exception as e:
             logging.error(f"Error converting {pdf_filename} to markdown: {e}")
             return None
@@ -75,10 +99,21 @@ def pdf2md(pdf_filename: str, output_md_filename: str = None, method : str ="pym
         logging.info("Removing all line numbers")
         markdown_text = remove_line_numbers(markdown_text)
     if output_md_filename is not None:
-        with open(output_md_filename, "w") as f:
-            f.write(markdown_text)
+        logging.info(f"Writing markdown to file: {output_md_filename}")
+        #with open(output_md_filename, "w", encoding='utf-8', errors='replace') as f:
+            #f.write(markdown_text)
+        pathlib.Path(output_md_filename).write_bytes(markdown_text.encode())
     #wait(1)
     return markdown_text
+
+def pdf2llama(pdf_path: str, output_md_filename: str = None):
+    """Convert a PDF file to markdown text using the LlamaParse API
+    :param pdf_path: The path of the PDF file to convert
+    :return: Llamaindex nodes list for ingestion into the LlamaIndex
+    """
+    md_read=pymupdfllm.LlamaMarkdownReader()
+    nodes = md_read.load_data(pdf_path)
+    return(nodes)
 
 async def async_to_markdown(pdf_filename: str) -> str:
     loop = asyncio.get_running_loop()
@@ -152,10 +187,11 @@ def all_pdfs2md(pdf_directory: str, output_md_dir=None, maxnum=None, method="pym
     donefiles = [file[:-3] for file in os.listdir(output_md_dir) if file.endswith('.md')]
     files = [file for file in allfiles if file[:-3] not in donefiles]
     logging.warning(f"Found {len(files)} files not converted yet")
+    skipped=0
     for pdf_file in tqdm(files, desc="Converting PDFs to markdown", unit="file", total=len(files)):
         #if not pdf_file.endswith(".pdf"):
         #     continue
-        logging.info(f"Converting {pdf_file} to markdown")
+        
         pdfpath = os.path.join(pdf_directory, pdf_file)
         if output_md_dir is not None:
             mdpath = os.path.join(output_md_dir, f"{os.path.basename(pdf_file)}.md")
@@ -163,7 +199,10 @@ def all_pdfs2md(pdf_directory: str, output_md_dir=None, maxnum=None, method="pym
             mdpath = f"{pdfpath}.md"
         if not force and os.path.exists(mdpath):
             #print(f"{mdpath} already exists, skipping")
+            skipped+=1
             continue
+        logging.info(f"Converting {pdfpath} to markdown as {mdpath}, skipped {skipped} existing files")
+        skipped=0
         pdf2md(pdfpath, output_md_filename=mdpath, method=method, remove_all_line_numbers=remove_all_line_numbers)
         i += 1
         if maxnum and i >= maxnum:

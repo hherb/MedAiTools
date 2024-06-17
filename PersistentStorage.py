@@ -27,6 +27,7 @@ from pprint import pprint
 from psycopg_pool import ConnectionPool
 from psycopg import sql, errors
 from psycopg.rows import dict_row
+import PDFParser
 
 #hack, so that we don't have to explicity import dict_row from psycopg in the calling module (in case our abstraction changes away from psycopg)
 dict_row=dict_row
@@ -440,7 +441,20 @@ class PublicationStorage(PersistentStorage):
                 for publication in tqdm(cursor, total=rowcount):
                     yield dict(publication)
    
-
+    def ingest_pdf(self, pdfpath: str, force=False):
+        """Ingest a PDF file into the database
+        :param pdfpath: str, the path to the PDF file
+        """
+        pdf_fname = os.path.basename(pdfpath)
+        #don't ingest the same file twice unless specifically requested
+        if self.file_is_ingested(pdf_fname):
+            logger.info(f"PDF file [{pdf_fname}] has already been ingested.")
+            if force:
+                #TODO: remove the existing record and re-ingest
+                logger.info(f"Re-ingesting PDF file [{pdf_fname}] ...")
+            else:
+                return(pdfpath)
+            markdown = ""
 
 if __name__ == "__main__":
     from pprint import pprint
