@@ -111,7 +111,7 @@ def pdf2llama(pdf_path: str, output_md_filename: str = None):
     :param pdf_path: The path of the PDF file to convert
     :return: Llamaindex nodes list for ingestion into the LlamaIndex
     """
-    md_read=pymupdfllm.LlamaMarkdownReader()
+    md_read=pymupdf4llm.LlamaMarkdownReader()
     nodes = md_read.load_data(pdf_path)
     return(nodes)
 

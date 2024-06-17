@@ -42,7 +42,8 @@ from llama_index.core.vector_stores.types import (
 
 from llama_index.vector_stores.postgres import PGVectorStore
 #from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from langchain.embeddings.huggingface import HuggingFaceBgeEmbeddings
+#from langchain.embeddings.huggingface import HuggingFaceBgeEmbeddings
+from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 #from llama_index.embeddings.huggingface_optimum import OptimumEmbedding
 
 from llama_index.core.retrievers import VectorIndexRetriever
@@ -174,57 +175,63 @@ class PersistentStorage:
             logger.error(f"Could not close all connections in the PostgreSQL connection pool. Error: {e}")
 
     def __del__(self):
-        self.close_all_connections()
+        #self.close_all_connections()
+        pass
 
     
-class VectorStorage(PersistentStorage):
-    """
-    A LlamaIndex vector store & indexing system using PostgreSQL as backend
-    """
+ 
 
-    def __init__(self, 
+    
+class PublicationStorage(PersistentStorage):
+    """
+    A persistent storage backend for MedrXiv publications
+    """
+    def __init__(self,  
                  storage_directory=s.PUBLICATION_DIR, #this is where we store blobs, eg PDF files
                  server_url=None, #the connection string to log into our postgresql server (DBAPI 2 compliant)
                  min_size= 1, max_size=10, #size of our connection pool
                  schema_migration_file=None #if stated, this file will be used to migrate the database schema
                  ):
-        super().__init__(storage_directory=storage_directory,
-                          server_url=server_url, 
-                          min_size=min_size, 
-                          max_size=max_size, 
-                          schema_migration_file=schema_migration_file)
+        """
+        Abstracts PostgreSQL interactions, maintains a connection to the PostgreSQL server
+        and provides often used functionality in simple class methods.
+        Requires server connection paarmeters as enironment variables (fetches them from from .env if exists)
+        :param storage_directory: str, the directory to store static files
+        :param server_url: str, the connection URL to the PostgreSQL server
+        :param min_size: int, the minimum number of connections in the connection pool
+        :param max_size: int, the maximum number of connections in the connection pool
+        :param schema_migration_file: str, the path to the SQL file containing the schema migration
+        """ 
+        super().__init__(storage_directory=storage_directory, server_url=server_url, min_size=min_size, max_size=max_size, schema_migration_file=schema_migration_file)
         self.vector_store = None
         self.storage_context = None
-        logging.info("Initiating the vector store ...")
         self.initiate_hybrid_vector_store()
-        
-    
 
     def initiate_hybrid_vector_store(self):
         """
         Initiate the hybrid vector store. Create it if it doesn't exist yet, else load it from storage.
         """
         self.llamaindex_settings = Settings
-        self.llm = medai.LLM.get_local_32k_model()
-        self.EMBEDDING_MODEL = s.EMBEDDING_MODEL
-        self.EMBEDDING_DIMENSIONS = s.EMBEDDING_DIMENSIONS
+        
         self.hybrid_index = None
         self.last_ingested = None #the most recent document ingested into the index
 
         #set up our embedding model. It will be downloaded into a local cache directory 
 		#if it doesn't exist locally yet. For this, an internet connection would be required
-        logger.warning(f"loading the embedding model {self.EMBEDDING_MODEL}")
-        #self._embedding_model = HuggingFaceEmbedding(model_name=self.EMBEDDING_MODEL)
-        #self._embedding_model = FastEmbedEmbedding(model_name=self.EMBEDDING_MODEL)
-        #Settings.embed_model = self._embedding_model= OptimumEmbedding(folder_name="./bge_onnx")
+        logger.info(f"loading the embedding model {s.EMBEDDING_MODEL}")
         self._embedding_model = HuggingFaceBgeEmbeddings(model_name=s.EMBEDDING_MODEL)
         self.llamaindex_settings.embed_model = self._embedding_model
-        logger.warning("setting up the vector store ,,,,,,,,,")
+
         self.llamaindex_settings.chunk_size = 512  #preliminary hack - we'll change that when we use more sophisticated / semantic chunking methods
         self.llamaindex_settings.batch_size = 20  # batch_size controls how many nodes are encoded with sparse vectors at once
         self.llamaindex_settings.enable_hybrid = True  # create our vector store with hybrid indexing enabled
         self.llamaindex_settings.enable_sparse = True
 
+        #self.llm = medai.LLM.LLM(medai.LLM.get_local_32k_model())
+        from llama_index.llms.litellm import LiteLLM
+        self.llm = LiteLLM(model=s.LOCAL_DEFAULT_MODEL,
+                            api_key=s.LOCAL_LLM_API_KEY,
+                            api_base=s.LOCAL_LLM_API_BASE)
         self.llamaindex_settings.llm = self.llm
         logger.info("setting up the vector store")
     
@@ -233,16 +240,17 @@ class VectorStorage(PersistentStorage):
         Settings.chunk_size = 512
        
         self.hybrid_vector_store = PGVectorStore.from_params(
-            database='medai',
-            host='localhost',
-            password='thisismedai',
-            port=5432,
-            user='medai',
-            table_name="RAGLibrarian",
-            embed_dim=self.EMBEDDING_DIMENSIONS,
+            database=s.DBNAME,
+            host=s.HOST,
+            password=s.DBPASS,
+            port=s.PORT,
+            user=s.DBUSER,
+            table_name=s.RAGTABLE,
+            embed_dim=s.EMBEDDING_DIMENSIONS,
             hybrid_search=True,
             text_search_config="english",
         )
+
         self.storage_context = StorageContext.from_defaults(
             vector_store=self.hybrid_vector_store
         )
@@ -256,15 +264,17 @@ class VectorStorage(PersistentStorage):
             logger.info(e)
             self.hybrid_index = None
 
+ 
 
-    def ingest(self, pdfpath, force=False) -> str:
+
+    def ingest_pdf(self, pdfpath, force=False) -> str:
         """
         Ingest a PDF file into the hydrid store
         :pdfpath (str): The path to the PDF file
         :force (bool): Whether to force re-ingestion of the file
         :return: str, the path to the ingested file
         """
-        if self.db.file_is_ingested(os.path.basename(pdfpath)) and not force:
+        if self.file_is_ingested(os.path.basename(pdfpath)) and not force:
             print(f"{pdfpath} has already been ingested")
             return(pdfpath)
         if not os.path.exists(pdfpath):
@@ -276,6 +286,8 @@ class VectorStorage(PersistentStorage):
         self.hybrid_index = VectorStoreIndex.from_documents(documents, embed_model=self._embedding_model, storage_context=self.storage_context)
         logger.info(f"Indexing of {pdfpath} complete") 
         return(pdfpath)
+    
+
 
     def get_query_engine(self, top_k=5, pdfpath=None):
         """Get a query engine for the RAG
@@ -313,31 +325,7 @@ class VectorStorage(PersistentStorage):
             response_synthesizer=response_synthesizer,
         )
         return query_engine
-
-
     
-class PublicationStorage(PersistentStorage):
-    """
-    A persistent storage backend for MedrXiv publications
-    """
-    def __init__(self,  
-                 storage_directory=s.PUBLICATION_DIR, #this is where we store blobs, eg PDF files
-                 server_url=None, #the connection string to log into our postgresql server (DBAPI 2 compliant)
-                 min_size= 1, max_size=10, #size of our connection pool
-                 schema_migration_file=None #if stated, this file will be used to migrate the database schema
-                 ):
-        """
-        Abstracts PostgreSQL interactions, maintains a connection to the PostgreSQL server
-        and provides often used functionality in simple class methods.
-        Requires server connection paarmeters as enironment variables (fetches them from from .env if exists)
-        :param storage_directory: str, the directory to store static files
-        :param server_url: str, the connection URL to the PostgreSQL server
-        :param min_size: int, the minimum number of connections in the connection pool
-        :param max_size: int, the maximum number of connections in the connection pool
-        :param schema_migration_file: str, the path to the SQL file containing the schema migration
-        """ 
-        super().__init__(storage_directory=storage_directory, server_url=server_url, min_size=min_size, max_size=max_size, schema_migration_file=schema_migration_file)
-
 
     def count(self, whereclause=None):
         """
@@ -365,6 +353,10 @@ class PublicationStorage(PersistentStorage):
             cursor = conn.execute(query)
             result = cursor.fetchone()
         return result[0]
+    
+    def has_been_ingested(self, pdfpath):
+        """LEGACY - just a wrapper for file_is_ingested"""
+        return self.file_is_ingested(os.path.basename(pdfpath))
     
 
     def latest_stored(self, from_which_server : str = "medrxiv") -> str:
@@ -611,26 +603,24 @@ class PublicationStorage(PersistentStorage):
                 logger.info(f"Found [{rowcount}] publications without a summary.")
                 for publication in tqdm(cursor, total=rowcount):
                     yield dict(publication)
-   
-    def _ingest(self, pdfpath: str):
-        return(self.getRAG().ingest(pdfpath))
+
     
-    def ingest_pdf(self, pdfpath: str, force=False):
-        """Ingest a PDF file into the database
-        :param pdfpath: str, the path to the PDF file
-        """
-        pdf_fname = os.path.basename(pdfpath)
-        #don't ingest the same file twice unless specifically requested
-        if self.file_is_ingested(pdf_fname):
-            logger.info(f"PDF file [{pdf_fname}] has already been ingested.")
-            if force:
-                #TODO: remove the existing record and re-ingest
-                logger.info(f"Re-ingesting PDF file [{pdf_fname}] with _ingest...")
-                return self._ingest(pdfpath)
-            else:
-                return(pdfpath)
-        logger.info(f"Re-ingesting PDF file [{pdf_fname}] with _ingest...")
-        return self._ingest(pdfpath)
+    # def ingest_pdf(self, pdfpath: str, force=False):
+    #     """Ingest a PDF file into the database
+    #     :param pdfpath: str, the path to the PDF file
+    #     """
+    #     pdf_fname = os.path.basename(pdfpath)
+    #     #don't ingest the same file twice unless specifically requested
+    #     if self.file_is_ingested(pdf_fname):
+    #         logger.info(f"PDF file [{pdf_fname}] has already been ingested.")
+    #         if force:
+    #             #TODO: remove the existing record and re-ingest
+    #             logger.info(f"Re-ingesting PDF file [{pdf_fname}] with _ingest...")
+    #             return self._ingest(pdfpath)
+    #         else:
+    #             return(pdfpath)
+    #     logger.info(f"Re-ingesting PDF file [{pdf_fname}] with _ingest...")
+    #     return self._ingest(pdfpath)
 
 if __name__ == "__main__":
     from pprint import pprint

@@ -1,7 +1,7 @@
 import os.path
 import logging
 
-from PersistentStorage import PublicationStorage, VectorStorage
+from PersistentStorage import PublicationStorage
 class RAG:
     """
     A simple implementation of the RAG (Retrieval Augmented Generation) model
@@ -15,8 +15,7 @@ class RAG:
     """
     def __init__(self):     
         self.db = PublicationStorage()
-        self.vdb = VectorStorage()
-
+        
 
     def ingest(self, pdfpath, force=False):
         """
@@ -24,7 +23,7 @@ class RAG:
         :pdfpath (str): The path to the PDF file
         :force (bool): Whether to force re-ingestion of the file    
         """
-        self.last_ingested = self.vdb.ingest(pdfpath, force=force)
+        self.last_ingested = self.db.ingest_pdf(pdfpath, force=force)
 
     def query(self, question, pdfpath=None, top_k=5):
         """Query the RAG
@@ -36,11 +35,17 @@ class RAG:
             str: The response to the question
         """
         #print(f"-----> running query [{question}] with pdfpath=[{pdfpath}]")
-        query_engine= self.vdb.get_query_engine(top_k=top_k, pdfpath=pdfpath)
+        query_engine= self.db.get_query_engine(top_k=top_k, pdfpath=pdfpath)
         response = query_engine.query(question)
         return response
 
-
+    def has_been_ingested(self, pdfpath):
+        """
+        Check if a PDF file has been ingested into the RAG
+        :pdfpath (str): The path to the PDF file
+        :return (bool): True if the file has been ingested, False otherwise
+        """
+        return self.db.has_been_ingested(pdfpath)
 
     
     

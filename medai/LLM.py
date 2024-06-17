@@ -22,6 +22,7 @@ import litellm
 from dotenv import load_dotenv
 import logging
 from medai.Settings import Settings
+from llama_index.llms.litellm import LiteLLM    #! pip install litellm
 
 s = Settings()
 
