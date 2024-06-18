@@ -18,12 +18,12 @@
 The app allows users to specify date ranges and keywords for fetching publications and 
 provides options to read abstracts, critiques, and download and access full PDFs.
 """
-
+import os, os.path
 import panel as pn
 from panel.widgets import Tqdm
 import datetime as dt
-import html
-import json
+#import html
+#import json
 from functools import partial
 from PGMedrXivScraper import MedrXivScraper, MedrXivAssistant
 
@@ -208,8 +208,8 @@ class MedrXivPanel(pn.viewable.Viewer):
             htmlpage = HTML_TEMPLATE.format(html=html)
             htmlpane = pn.pane.HTML(htmlpage)
                     
-            pdf_path =  self.scraper.pdf_path(publication, fetch=True) #Will attempt to fetch it if not already available
-    
+            pdf_path = self.scraper.pdf_path(publication, fetch=True) #Will attempt to fetch it if not already available
+            pdf_path = os.path.expanduser(pdf_path)
              # Define a callback function that takes the pdf_path as a parameter    
             btn = pn.widgets.Button(name=f"Read full paper", button_type='primary', width=60, margin=10)
             btn.on_click(partial(self.open_pdf, publication))

@@ -35,6 +35,9 @@ from llama_index.core import (
     load_index_from_storage,
     get_response_synthesizer,
 )
+
+from llama_index.core import SimpleDirectoryReader
+
 from llama_index.core.vector_stores.types import (
     MetadataFilter,
     MetadataFilters,
@@ -277,10 +280,11 @@ class PublicationStorage(PersistentStorage):
             print(f"{pdfpath} does not exist")
             return('')
         logger.info(f"ingesting {pdfpath}") 
-        documents=PDFParser.pdf2llama(pdfpath)
+        #documents=PDFParser.pdf2llama(pdfpath)
+        documents=SimpleDirectoryReader(input_files=[pdfpath]).load_data()
         logger.info(f"Loaded {len(documents)} nodes from {pdfpath}, indexing now ....")
-        #self.hybrid_index = VectorStoreIndex.from_documents(documents, storage_context=self.storage_context)
-        self.hybrid_index.from_documents(documents, storage_context=self.storage_context)
+        self.hybrid_index = VectorStoreIndex.from_documents(documents, storage_context=self.storage_context)
+        #self.hybrid_index.from_documents(documents, storage_context=self.storage_context)
         logger.info(f"Indexing of {pdfpath} complete") 
         return(pdfpath)
     
