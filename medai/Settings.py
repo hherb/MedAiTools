@@ -95,7 +95,7 @@ class Settings(metaclass=SingletonMeta):
             'DBNAME' : 'medai',
             'HOST' : 'localhost',
             'PORT' : 5432,
-            'RAGTABLE' : 'RAGLibrarian',
+            'RAGTABLE' : 'data_raglibrarian',
         
         }
         return settings

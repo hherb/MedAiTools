@@ -15,6 +15,7 @@ class RAG:
     """
     def __init__(self):     
         self.db = PublicationStorage()
+        self.last_ingested=None
         
 
     def ingest(self, pdfpath, force=False):

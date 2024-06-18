@@ -113,6 +113,9 @@ def pdf2llama(pdf_path: str, output_md_filename: str = None):
     """
     md_read=pymupdf4llm.LlamaMarkdownReader()
     nodes = md_read.load_data(pdf_path)
+    for node in nodes:
+        node.text=remove_line_numbers(node.text)
+        node.metadata['filename']=os.path.basename(node.metadata['file_path'])
     return(nodes)
 
 async def async_to_markdown(pdf_filename: str) -> str:

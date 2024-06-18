@@ -98,9 +98,7 @@ class PDFPanel(pn.viewable.Viewer):
         if not self.RAG.has_been_ingested(filepath):
             info= pn.state.notifications.info(f"Ingesting [{filepath}]", duration=0)
             self.RAG.ingest(filepath)
-             #record ingestion, so that we do not needlessly keep ingesting the same PDF
             self.displayed_pdf=filepath
-            #self.remember_ingestion(filepath)
             info.destroy()
 
 if __name__ == "__main__":

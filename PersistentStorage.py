@@ -41,9 +41,9 @@ from llama_index.core.vector_stores.types import (
 )
 
 from llama_index.vector_stores.postgres import PGVectorStore
-#from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 #from langchain.embeddings.huggingface import HuggingFaceBgeEmbeddings
-from langchain_community.embeddings import HuggingFaceBgeEmbeddings
+#from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 #from llama_index.embeddings.huggingface_optimum import OptimumEmbedding
 
 from llama_index.core.retrievers import VectorIndexRetriever
@@ -54,7 +54,6 @@ import medai.LLM
 from medai.Settings import Settings as MedAISettings
 
 s = MedAISettings()
-HuggingFaceBgeEmbeddings(model_name=s.EMBEDDING_MODEL)
 
 #hack, so that we don't have to explicity import dict_row from psycopg in the calling module (in case our abstraction changes away from psycopg)
 dict_row=dict_row
@@ -219,7 +218,8 @@ class PublicationStorage(PersistentStorage):
         #set up our embedding model. It will be downloaded into a local cache directory 
 		#if it doesn't exist locally yet. For this, an internet connection would be required
         logger.info(f"loading the embedding model {s.EMBEDDING_MODEL}")
-        self._embedding_model = HuggingFaceBgeEmbeddings(model_name=s.EMBEDDING_MODEL)
+        #self._embedding_model = HuggingFaceBgeEmbedding(model_name=s.EMBEDDING_MODEL)
+        self._embedding_model=HuggingFaceEmbedding
         self.llamaindex_settings.embed_model = self._embedding_model
 
         self.llamaindex_settings.chunk_size = 512  #preliminary hack - we'll change that when we use more sophisticated / semantic chunking methods
@@ -234,11 +234,7 @@ class PublicationStorage(PersistentStorage):
                             api_base=s.LOCAL_LLM_API_BASE)
         self.llamaindex_settings.llm = self.llm
         logger.info("setting up the vector store")
-    
-        logger.info("setting the storage context")
-    
-        Settings.chunk_size = 512
-       
+               
         self.hybrid_vector_store = PGVectorStore.from_params(
             database=s.DBNAME,
             host=s.HOST,
@@ -252,17 +248,17 @@ class PublicationStorage(PersistentStorage):
         )
 
         self.storage_context = StorageContext.from_defaults(
-            vector_store=self.hybrid_vector_store
+            vector_store=self.hybrid_vector_store, 
         )
+
         #try and load the index, if it exists
-        try:
-            self.hybrid_index = VectorStoreIndex.from_vector_store(embed_model=self._embedding_model, 
-                                                                   vector_store = self.hybrid_vector_store, 
-                                                                   storage_context=self.storage_context)
-        except Exception as e:
-            logger.info("failed to activate hybrid index, not initialized yet?")
-            logger.info(e)
-            self.hybrid_index = None
+        self.hybrid_index = VectorStoreIndex.from_vector_store(self.hybrid_vector_store, storage_context=self.storage_context)
+        # try:
+        #     self.hybrid_index = VectorStoreIndex.from_vector_store(storage_context=self.storage_context)
+        # except Exception as e:
+        #     logger.info("failed to activate hybrid index, not initialized yet?")
+        #     logger.info(e)
+        #     self.hybrid_index = None
 
  
 
@@ -283,7 +279,8 @@ class PublicationStorage(PersistentStorage):
         logger.info(f"ingesting {pdfpath}") 
         documents=PDFParser.pdf2llama(pdfpath)
         logger.info(f"Loaded {len(documents)} nodes from {pdfpath}, indexing now ....")
-        self.hybrid_index = VectorStoreIndex.from_documents(documents, embed_model=self._embedding_model, storage_context=self.storage_context)
+        #self.hybrid_index = VectorStoreIndex.from_documents(documents, storage_context=self.storage_context)
+        self.hybrid_index.from_documents(documents, storage_context=self.storage_context)
         logger.info(f"Indexing of {pdfpath} complete") 
         return(pdfpath)
     
