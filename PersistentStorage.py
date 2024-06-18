@@ -207,6 +207,7 @@ class PublicationStorage(PersistentStorage):
         super().__init__(storage_directory=storage_directory, server_url=server_url, min_size=min_size, max_size=max_size, schema_migration_file=schema_migration_file)
         self.vector_store = None
         self.storage_context = None
+        self.hybrid_index = None
         self.initiate_hybrid_vector_store()
 
     def initiate_hybrid_vector_store(self):
@@ -215,14 +216,14 @@ class PublicationStorage(PersistentStorage):
         """
         self.llamaindex_settings = Settings
         
-        self.hybrid_index = None
         self.last_ingested = None #the most recent document ingested into the index
 
         #set up our embedding model. It will be downloaded into a local cache directory 
 		#if it doesn't exist locally yet. For this, an internet connection would be required
         logger.info(f"loading the embedding model {s.EMBEDDING_MODEL}")
         #self._embedding_model = HuggingFaceBgeEmbedding(model_name=s.EMBEDDING_MODEL)
-        self._embedding_model=HuggingFaceEmbedding
+        
+        self._embedding_model=HuggingFaceEmbedding(model_name=s.EMBEDDING_MODEL)
         self.llamaindex_settings.embed_model = self._embedding_model
 
         self.llamaindex_settings.chunk_size = 512  #preliminary hack - we'll change that when we use more sophisticated / semantic chunking methods
@@ -255,7 +256,7 @@ class PublicationStorage(PersistentStorage):
         )
 
         #try and load the index, if it exists
-        self.hybrid_index = VectorStoreIndex.from_vector_store(self.hybrid_vector_store, storage_context=self.storage_context)
+        self.hybrid_index = VectorStoreIndex.from_vector_store(self.hybrid_vector_store, storage_context=self.storage_context, embed_model=self._embedding_model,)
         # try:
         #     self.hybrid_index = VectorStoreIndex.from_vector_store(storage_context=self.storage_context)
         # except Exception as e:
@@ -284,14 +285,14 @@ class PublicationStorage(PersistentStorage):
         documents=PDFParser.pdf2llama(pdfpath)
         #documents=SimpleDirectoryReader(input_files=[pdfpath]).load_data()
         logger.info(f"Loaded {len(documents)} nodes from {pdfpath}, indexing now ....")
-        self.hybrid_index = VectorStoreIndex.from_documents(documents, storage_context=self.storage_context)
+        self.hybrid_index = VectorStoreIndex.from_documents(documents, storage_context=self.storage_context, embed_model=self._embedding_model, llm=self.llm)
         #self.hybrid_index.from_documents(documents, storage_context=self.storage_context)
         logger.info(f"Indexing of {pdfpath} complete") 
         return(pdfpath)
     
 
 
-    def get_query_engine(self, top_k=5, pdfpath=None):
+    def get_query_engine(self, top_k=5, pdfpath=None, simple=True):
         """Get a query engine for the RAG
         Args:
             top_k (int): The number of documents to retrieve
@@ -302,6 +303,8 @@ class PublicationStorage(PersistentStorage):
         if self.hybrid_index is None:
             print("Index not initialized yet, loading from storage ...")
             self.hybrid_index = load_index_from_storage(self.storage_context)
+
+        #shall we interrogate only one or all documents in the vectorstore
         metafilters = []
         if pdfpath is not None:
             print(f"-----> METADATA FILTER FOR file_name = {os.path.basename(pdfpath)}")
@@ -310,6 +313,11 @@ class PublicationStorage(PersistentStorage):
                     MetadataFilter(key="file_name", value=os.path.basename(pdfpath)),
                 ],
             )
+
+        if simple: #do a simple index search only
+            query_engine = self.hybrid_index.as_query_engine()
+            return query_engine
+        
         # configure retriever
         retriever = VectorIndexRetriever(
             index=self.hybrid_index,

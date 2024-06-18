@@ -87,6 +87,7 @@ class Settings(metaclass=SingletonMeta):
             #EMBEDDING
             'EMBEDDING_MODEL' : 'BAAI/bge-m3',
             'EMBEDDING_DIMENSIONS' : 1024,
+            #'EMBEDDING_DIMENSIONS' : 1536,
             #STORAGE
             'LOCAL_STORAGE_DIR' : '~/medai',
             'PUBLICATION_DIR' : '~/src/github/MedAiTools/library',
@@ -95,7 +96,7 @@ class Settings(metaclass=SingletonMeta):
             'DBNAME' : 'medai',
             'HOST' : 'localhost',
             'PORT' : 5432,
-            'RAGTABLE' : 'data_raglibrarian',
+            'RAGTABLE' : 'raglibrarian',
         
         }
         return settings
