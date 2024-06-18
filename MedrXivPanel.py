@@ -151,19 +151,19 @@ class MedrXivPanel(pn.viewable.Viewer):
         """
         info=pn.state.notifications.info('Retrieving PDF...', duration=0)
         pdf_path = self.scraper.pdf_path(publication)
+        pdf_path = os.path.expanduser(pdf_path)
         info.destroy()
         if not pdf_path:
             info=pn.state.notifications.info('Failed to locate PDF, attempting to retrieve it from the internet', duration=0)
             try:         
                 pdf_path = self.scraper.fetch_pdf_from_publication(publication)
+                pdf_path = os.path.expanduser(pdf_path)
                 info.destroy()
             except:
                 info.destroy()
                 info= pn.state.notifications.info('Failed to locate PDF, and failed to retrieve it from the internet', duration=10)
                 pdf_path=""
-
-                
-         
+       
         if pdf_path and self.pdf2RAG is not None:
             self.pdf2RAG(pdf_path)
         #print(f"Opening PDF: {pdf_path}")   

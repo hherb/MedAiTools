@@ -273,6 +273,7 @@ class PublicationStorage(PersistentStorage):
         :force (bool): Whether to force re-ingestion of the file
         :return: str, the path to the ingested file
         """
+        pdfpath = os.path.expanduser(pdfpath)
         if self.file_is_ingested(os.path.basename(pdfpath)) and not force:
             print(f"{pdfpath} has already been ingested")
             return(pdfpath)
@@ -280,8 +281,8 @@ class PublicationStorage(PersistentStorage):
             print(f"{pdfpath} does not exist")
             return('')
         logger.info(f"ingesting {pdfpath}") 
-        #documents=PDFParser.pdf2llama(pdfpath)
-        documents=SimpleDirectoryReader(input_files=[pdfpath]).load_data()
+        documents=PDFParser.pdf2llama(pdfpath)
+        #documents=SimpleDirectoryReader(input_files=[pdfpath]).load_data()
         logger.info(f"Loaded {len(documents)} nodes from {pdfpath}, indexing now ....")
         self.hybrid_index = VectorStoreIndex.from_documents(documents, storage_context=self.storage_context)
         #self.hybrid_index.from_documents(documents, storage_context=self.storage_context)
