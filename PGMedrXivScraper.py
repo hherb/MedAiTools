@@ -156,12 +156,13 @@ class MedrXivScraper:
         :param publications: a list of publications to fetch PDFs for. If None, fetches PDFs for all publications in the database
         :param only_highest_version: if True, only fetches the PDFs for the highest version of each publication['doi']
         """
+        import random
         if publications is None:
             publications = self.find_publications_without_pdf(only_highest_version=only_highest_version)
         for publication in publications:
                 result = self.fetch_pdf_from_medrXiv(publication)
                 if result is not None: #a pdf has been downloaded, wait a bit before fetching the next one
-                    sleep(3) #don't hammer the medrXiv server needlessly
+                    sleep(random.randint(3,12)) #don't hammer the medrXiv server needlessly
 
     def has_pdf(self, publication: dict) -> bool:
         """checks if a publication has a PDF
