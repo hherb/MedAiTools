@@ -357,6 +357,7 @@ class PublicationStorage(PersistentStorage):
         :param filename: str, the filename to check
         :return: bool, True if the file has been ingested, False otherwise
         """
+        filename = os.path.basename(filename)   #strip the parh from the filename if necessary
         with self.connection() as conn:
             querytemplate = """select EXISTS(select 1 from data_raglibrarian where metadata_ ->> 'file_name' = {filename})"""
             query = sql.SQL(querytemplate).format(filename=sql.Literal(filename))
