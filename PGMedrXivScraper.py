@@ -11,6 +11,7 @@ from tenacity import retry, wait_random
 from pprint import pprint
 from medai.Settings import Settings as MedAISettings
 
+
 from PersistentStorage import PublicationStorage, dict_row
 
 s = MedAISettings()

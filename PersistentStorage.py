@@ -530,34 +530,31 @@ class PublicationStorage(PersistentStorage):
         :return: iterator of dicts, the publications found
         """
         # Prepare the keywords placeholder
-        keywords_placeholder = sql.SQL(', ').join(sql.Literal("%{}%".format(k)) for k in keywords)
+        keywords_placeholder = ', '.join([f"'%{k.strip()}%'" for k in keywords])
+        print(f">>>>>>>>> keywords_placeholder={keywords_placeholder}")
         # Base query with placeholders for dynamic parts
-        query_template = sql.SQL(f"""
+        query_template = f"""
             SELECT
                 *
             FROM
                 newest_revision_with_fulltext_columns
             WHERE
-                (title ILIKE {any_or_all}(ARRAY[{keywords}])
-                OR abstract ILIKE {any_or_all}(ARRAY[{keywords}])
-                OR summary ILIKE {any_or_all}(ARRAY[{keywords}]))
-        """)
+                (title ILIKE {any_or_all}(ARRAY[{keywords_placeholder}])
+                OR abstract ILIKE {any_or_all}(ARRAY[{keywords_placeholder}])
+                OR summary ILIKE {any_or_all}(ARRAY[{keywords_placeholder}]))
+        """
         # Replace the placeholder in the base query
-        query_filled = query_template.format(keywords=keywords_placeholder)
+        query_filled = query_template #.format(keywords=keywords_placeholder)
         # Date range filtering
-        date_conditions = []
         if from_date:
-            date_conditions.append(sql.SQL("date >= {}").format(sql.Literal(from_date)))
+            query_filled += f"AND (date >= '{from_date}')"
         if to_date:
-            date_conditions.append(sql.SQL("date <= {}").format(sql.Literal(to_date)))
-        # Add date conditions to the query
-        if date_conditions:
-            query_filled += sql.SQL(" AND ") + sql.SQL(" AND ").join(date_conditions)
-        query_filled += sql.SQL(" ORDER BY date DESC")
+            query_filled += f"AND (date <= '{to_date}')"
+        query_filled += " ORDER BY date DESC"
         # Add limit to the query
         if limit>0:
-            query_filled += sql.SQL(" LIMIT {}").format(sql.Literal(limit))
-
+            query_filled += f" LIMIT {limit}"
+        print(f">>>>>>>>> query_filled={query_filled}")
         # Execute the query
         with self.connection() as conn:
             with conn.cursor(row_factory=dict_row) as cursor:

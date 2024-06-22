@@ -10,10 +10,14 @@ newsitem_format ="""
 {summary}
 """
 
+def full_paper(news):
+      print(f"Full paper clicked: {news['title']}")
 
 class NewsPanel(pn.viewable.Viewer):
-    def __init__(self, news=None):
-        
+    _callback = None
+    def __init__(self, news=None, callback=full_paper):
+        NewsPanel._callback = callback
+        print("Creating NewsPanel")
         self.newsfeed_panel = pn.Feed(load_buffer=20, scroll=True,sizing_mode='stretch_both')
         if not news:
             from PGMedrXivScraper import MedrXivScraper
@@ -22,6 +26,7 @@ class NewsPanel(pn.viewable.Viewer):
         else:
             self.news=news
         for n in self.news:
+            print(f"Adding news item: {n['title']}")
             self.newsfeed_panel.append( HeadlinePanel(n, self.on_paper_click).get_panel()) 
         self.panel = pn.panel(self.newsfeed_panel, sizing_mode='stretch_both')
         
@@ -30,14 +35,15 @@ class NewsPanel(pn.viewable.Viewer):
 
     @classmethod
     def on_paper_click(cls, event, news):
+        if cls._callback:
+            cls._callback(news)
         print(f"Paper ID clicked: {news['title']}")
 
 
-def full_paper(event, news):
-    print(f"Full paper clicked: {news['title']}")   
+
 
 class HeadlinePanel:
-    def __init__(self, news, callback=full_paper):
+    def __init__(self, news, callback):
         self.outer_style = {
             'background': '#E0F7FA',
             'border-radius': '10px',
@@ -79,5 +85,6 @@ if __name__ == "__main__":
     #     with open('news_data.json', 'w') as file:
     #         json.dump(news, file)
     news_panel = NewsPanel()
+    news_column = pn.Column(news_panel)
     #news_panel.servable()
-    pn.serve(news_panel)
+    pn.serve(news_column)

@@ -26,9 +26,9 @@ import datetime as dt
 #import json
 from functools import partial
 from PGMedrXivScraper import MedrXivScraper, MedrXivAssistant
+from DailyNews import NewsPanel
 
-
-pn.extension('texteditor', loading_indicator=True, design="material")
+pn.extension('texteditor', notifications=True, loading_indicator=True, design="material")
 
 styles = {
     'background-color': '#F6F6F6', 
@@ -143,15 +143,18 @@ class MedrXivPanel(pn.viewable.Viewer):
         # Fetch publications
         if self.use_dates_for_search_tickbox.value:
             from_date, to_date = self.date_range_picker.value
+            from_date=from_date.strftime("%Y-%m-%d")
+            to_date=to_date.strftime("%Y-%m-%d")
         else:
             from_date = None
             to_date = None
-        publications = self.scraper.db.search_for(keywords=self.keywords.value.split(',') , 
-                                                  any_or_all = self.any_or_all.value, 
-                                                  from_date=from_date, to_date=to_date)
+        print(f"Searching for publications from {from_date} to {to_date}")
+        publications = self.scraper.db.search_for(keywords=self.keywords.value.split(','), any_or_all = self.any_or_all.value, from_date=from_date, to_date=to_date)
+
+        print(f"Found publications")
         self.display_publications(publications)
 
-    def open_pdf(self, publication, event):
+    def open_pdf(self, publication,  event=None ):
         """
         This function opens a PDF file, ingests it into the vector store (if not ingested already) 
         and displays it in the Research Assistant GUI for interrogation.
@@ -178,12 +181,17 @@ class MedrXivPanel(pn.viewable.Viewer):
         # 
     
 
-    def display_publications(self, publications: dict):
+    def display_publications(self, publications: list[dict]):
+        self.display_column.clear()
+        self.newspanel=NewsPanel(news=publications, callback=self.open_pdf)
+        self.display_column.append(self.newspanel)
+
+    def display_publications_old(self, publications: list[dict]):
         """
         The function displays the publications in a panel with detailed information and provides
         options to read abstracts, critiques, and access full PDFs.
         If the PDF is not available locally, the function attempts to fetch it from the internet.
-        :param publications:   a medrXiv publication dictionary
+        :param publications:   a list of medrXiv publication dictionaries
         """
         # Update the panel with the fetched publications
         #self.html_panel.object = scraper.list_abstracts(publications, format="html")
