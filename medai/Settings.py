@@ -31,27 +31,39 @@ class SingletonMeta(type):
             return cls._instances[cls]
 
 class Settings(metaclass=SingletonMeta):
-    def __init__(self):
-        try:
-            print("loading ...")
-            self.settings = self.load_settings()
-            if not self.settings:
-                self.settings = self.default_settings()
-        except Exception as e:
-            logging.error(f"Error loading settings: {e}")
+    """
+    Singleton class to manage settings for the MedAi tools. All tools share the same settings that way.
+    Settings will be stored in a json file '.medai.json' in the user's home directory.
+    """
+    def __init__(self, from_defaults=False):
+        """
+        Load settings from file
+        :param from_defaults: If True, load default settings & do NOT override saved settings
+        """
+        if from_defaults:
             self.settings = self.default_settings()
+            return 
+        
+        self.settings = self.load_settings()
+        if not self.settings:
+            self.settings = self.default_settings()
+        
 
     def load_settings(self):
-        settings_path = os.path.join(os.path.expanduser('~'), '.medai.ini')
+        settings_path = os.path.join(os.path.expanduser('~'), '.medai.json')
         try:
             with open(settings_path, 'r') as file:
                 return json.load(file)
         except (FileNotFoundError, json.JSONDecodeError) as e:
-            logging.error(f"Error loading settings from {settings_path}: {e}")
-            return self.default_settings()
+            logging.error(f"Error loading settings: {e}, using defaults")
+            self.settings = self.default_settings()
+            logging.info(f"saving default settings as {settings_path}")
+            self.save_settings(self.settings)
+            return(self.settings)
 
     def save_settings(self, settings):
-        settings_path = os.path.join(os.path.expanduser('~'), '.medai.ini')
+        settings_path = os.path.join(os.path.expanduser('~'), '.medai.json')
+        logging.error(f"saving settings in [{settings_path}]")
         try:
             with open(settings_path, 'w') as file:
                 json.dump(settings, file, indent=4)
@@ -100,3 +112,8 @@ class Settings(metaclass=SingletonMeta):
         
         }
         return settings
+    
+
+if __name__ == "__main__":
+    settings = Settings()
+    print(settings.LOCAL_STORAGE_DIR)

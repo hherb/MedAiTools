@@ -3,6 +3,14 @@ import panel as pn
 
 pn.extension()
 
+newsitem_format ="""
+<h3>{title}</h3>
+{authors} - {date}
+<hr />
+{summary}
+"""
+
+
 class NewsPanel(pn.viewable.Viewer):
     def __init__(self, news=None):
         
@@ -39,15 +47,15 @@ class HeadlinePanel:
             'margin': "10px",
         }
         # Format the display text using Markdown with an HTML anchor tag for the link
-        display_text = f"""**{news['title']}**\n{news['authors']}  *Published on: {news['date']}*\n---\n {news['abstract']} """  
+        display_text = newsitem_format.format(**news)
         # Create a Markdown pane with the formatted text
         fullpaper_btn = pn.widgets.Button(name="Full paper", button_type="primary", width=100)
         fullpaper_btn.on_click(lambda event: callback(event, news=news))
         buttonrow = pn.Row(fullpaper_btn, width=100)
-        content_panel = pn.Column(pn.pane.Markdown(display_text, sizing_mode='stretch_width'), 
+        content_panel = pn.Column(pn.pane.HTML(display_text, sizing_mode='stretch_width'), 
                                   buttonrow, 
                                   sizing_mode='stretch_width',
-                                  styles=self.outer_style,) #{'background-color': '#E0F7FA', 'border-radius': '10px'},)
+                                  styles=self.outer_style,)
         self.panel = content_panel
 
     def get_panel(self):
@@ -58,18 +66,18 @@ class HeadlinePanel:
 
 
 if __name__ == "__main__":
-    try:
-        #testing with cached data
-        import json
-        with open('news_data.json', 'r') as file:
-            news = json.load(file)
-    except:
-        #cached data not available, fetch from server
-        from PGMedrXivScraper import MedrXivScraper
-        scraper = MedrXivScraper()
-        news = scraper.fetch_latest_publications()
-        with open('news_data.json', 'w') as file:
-            json.dump(news, file)
-    news_panel = NewsPanel(news)
+    # try:
+    #     #testing with cached data
+    #     import json
+    #     with open('news_data.json', 'r') as file:
+    #         news = json.load(file)
+    # except:
+    #     #cached data not available, fetch from server
+    #     from PGMedrXivScraper import MedrXivScraper
+    #     scraper = MedrXivScraper()
+    #     news = scraper.fetch_latest_publications()
+    #     with open('news_data.json', 'w') as file:
+    #         json.dump(news, file)
+    news_panel = NewsPanel()
     #news_panel.servable()
     pn.serve(news_panel)

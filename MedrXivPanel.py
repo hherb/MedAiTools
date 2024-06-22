@@ -94,12 +94,13 @@ class MedrXivPanel(pn.viewable.Viewer):
         self.date_range_picker = pn.widgets.DateRangePicker(name='Date Range', value=(start_date, end_date))
         self.use_dates_for_search_tickbox = pn.widgets.Checkbox(name='Use dates for search', value=False)
         self.keywords= pn.widgets.TextInput(name='Keywords', value=', '.join(self.keywordlist), align=('center'), sizing_mode='stretch_width')
+        self.any_or_all= pn.widgets.RadioButtonGroup(name='Any or all keywords', options=['Any', 'All'], value='Any', align=('center'), sizing_mode='stretch_width')    
         self.heading= pn.pane.Markdown("## Your MedrXiv publications (not fetched yet)", sizing_mode='stretch_width')
         self.display_column=pn.Column()
         #self.display_panel = pn.panel(self.display_column, sizing_mode='stretch_both')
         self.panel = pn.Column(self.heading, 
                                 pn.Column(self.display_column, scroll=True, sizing_mode='stretch_both'),
-                                pn.Row(self.keywords, self.search_btn),
+                                pn.Row(self.keywords, self.any_or_all, self.search_btn),
                                 pn.Row(self.use_dates_for_search_tickbox , self.date_range_picker, self.fetch_btn),
                                 sizing_mode='stretch_both')
 
@@ -140,7 +141,14 @@ class MedrXivPanel(pn.viewable.Viewer):
         provided code snippet. It is passed by a UI element and not required in the function.
         """
         # Fetch publications
-        publications = self.scraper.db.search_for(keywords=self.keywords.value.split(',') )
+        if self.use_dates_for_search_tickbox.value:
+            from_date, to_date = self.date_range_picker.value
+        else:
+            from_date = None
+            to_date = None
+        publications = self.scraper.db.search_for(keywords=self.keywords.value.split(',') , 
+                                                  any_or_all = self.any_or_all.value, 
+                                                  from_date=from_date, to_date=to_date)
         self.display_publications(publications)
 
     def open_pdf(self, publication, event):

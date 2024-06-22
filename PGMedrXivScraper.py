@@ -1,4 +1,5 @@
 import os, os.path
+import logging
 import requests
 from datetime import datetime, timedelta
 from tqdm import tqdm
@@ -30,7 +31,7 @@ class MedrXivScraper:
         """
         self.tqdm=tqdm
         if db is None:
-            db = PublicationStorage()
+            db = PublicationStorage(tqdm=self.tqdm)
         self.db=db
         self.callback_notification = callback_notification
         self.callback_notification("MedrXivScraper initialized")
@@ -91,7 +92,7 @@ class MedrXivScraper:
         self.callback_notification(f"fetched {len(all_publications)} publications")
         for publication in tqdm(all_publications, total=len(all_publications), desc="Inserting into database"):
             publication['id'] = self.db.upsert(publication)
-            print(publication['id'])
+            #print(publication['id'])
             if fetch_pdfs:
                 self.fetch_pdf_from_medrXiv(publication, upsert=True)
         #results = self.db.bulk_upsert(all_publications)
@@ -100,20 +101,35 @@ class MedrXivScraper:
         return publications
 
 
-    def fetch_latest_publications(self, days: int = 0, fetch_pdfs=False) -> list[dict]:
+    def fetch_latest_publications(self, days:int = 0, fetch_pdfs:bool=False) -> list[dict]:
         """fetches the latest publications from medrXiv
         :param days: the number of days to fetch publications, counting backwards from today. 
             If 0, fetches all not yet ingested publications from the last day in the database 
             until today
-        :return: a list of publications in the form of dictionaries
+        :return: a list of publications in the form of dictionaries for the given time span
+            which is either the specified number of days until today, or from the last stored date until today
         """
         today = datetime.now().strftime('%Y-%m-%d')
-        if days<1:
+        if days==0:
             start_date=self.db.latest_stored()
         else:  #we want an overlap in case we didn't fetch the full day or late submissions
             start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
-        publications = self.fetch_from_medrXiv(start_date, today, fetch_pdfs=fetch_pdfs)
-        return publications
+        logging.info(f"Fetching publications from {start_date} to {today}")
+        if start_date != today:
+            try:
+                self.fetch_from_medrXiv(start_date, today, fetch_pdfs=fetch_pdfs)
+            except Exception as e:
+                logging.error(f"Failed to fetch publications: {e}")
+        self.update_summaries()
+        return self.db.fetch_daterange(start_date, today)
+    
+    def update_summaries(self):
+        """updates summaries for a list of publications
+        :param publications: a list of publications in the form of dictionaries
+        """
+        assistant = MedrXivAssistant(self.db, tqdm=self.tqdm)
+        for publication in self.db.missing_summaries():
+            assistant.summarize(publication, commit=True)
 
     def get_pdf_url(self, publication : dict) -> str:
         """creates a URL for full PDF download from a retrieved publication
@@ -179,13 +195,15 @@ class MedrXivScraper:
                 if result is not None: #a pdf has been downloaded, wait a bit before fetching the next one
                     sleep(random.randint(3,12)) #don't hammer the medrXiv server needlessly
 
+
     def has_pdf(self, publication: dict) -> bool:
         """checks if a publication has a PDF
         :param publication: a publication in the form of a dictionary
         :return: True if the publication has a PDF, False otherwise
         """
         return publication.get('pdf_filename', '') != ''
-    
+
+
     def pdf_path(self, publication: dict, fetch: bool = False) -> str:
         """returns the path to the PDF of a publication
         :param publication: a publication in the form of a dictionary
@@ -195,7 +213,8 @@ class MedrXivScraper:
         if not pdfpath and fetch:
             pdfpath = self.fetch_pdf_from_medrXiv(publication)
         return pdfpath
-        
+
+
     def exclude_duplicates(self, publications: list[dict]) -> list[dict]:
         """excludes duplicate publications from a list
         :param publications: a list of publications in the form of dictionaries
@@ -211,7 +230,6 @@ class MedrXivScraper:
         return unique_publications  
 
      
-
     def find_publications_without_pdf(self, only_highest_version=True):
         """finds publications in the database without a PDF
         :param publications: a list of publications to search. If None, searches the whole database

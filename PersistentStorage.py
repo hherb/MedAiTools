@@ -192,6 +192,7 @@ class PublicationStorage(PersistentStorage):
                  storage_directory=s.PUBLICATION_DIR, #this is where we store blobs, eg PDF files
                  server_url=None, #the connection string to log into our postgresql server (DBAPI 2 compliant)
                  min_size= 1, max_size=10, #size of our connection pool
+                 tqdm=tqdm, #the progress bar to use
                  schema_migration_file=None #if stated, this file will be used to migrate the database schema
                  ):
         """
@@ -205,6 +206,7 @@ class PublicationStorage(PersistentStorage):
         :param schema_migration_file: str, the path to the SQL file containing the schema migration
         """ 
         super().__init__(storage_directory=storage_directory, server_url=server_url, min_size=min_size, max_size=max_size, schema_migration_file=schema_migration_file)
+        self.tqdm=tqdm
         self.vector_store = None
         self.storage_context = None
         self.hybrid_index = None
@@ -223,7 +225,8 @@ class PublicationStorage(PersistentStorage):
         logger.info(f"loading the embedding model {s.EMBEDDING_MODEL}")
         #self._embedding_model = HuggingFaceBgeEmbedding(model_name=s.EMBEDDING_MODEL)
         
-        self._embedding_model=HuggingFaceEmbedding(model_name=s.EMBEDDING_MODEL)
+        #self._embedding_model=HuggingFaceEmbedding(model_name=s.EMBEDDING_MODEL)
+        self._embedding_model=HuggingFaceEmbedding(model_name='./bge-m3')
         self.llamaindex_settings.embed_model = self._embedding_model
 
         self.llamaindex_settings.chunk_size = 512  #preliminary hack - we'll change that when we use more sophisticated / semantic chunking methods
@@ -467,6 +470,20 @@ class PublicationStorage(PersistentStorage):
                 return None
             
 
+    def fetch_daterange(self, from_date: str, to_date: str) -> iter:
+        """fetch publications within a date range
+        :param from_date: str, the start date for filtering (inclusive)
+        :param to_date: str, the end date for filtering (inclusive)
+        :return: iterator of dicts, the publications found
+        """
+        query = sql.SQL(f"SELECT * FROM publications_newest_revisions WHERE date BETWEEN '{from_date}' AND '{to_date}'")
+        with self.connection() as conn:
+            with conn.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(query)
+                for publication in cursor:
+                    yield dict(publication)
+
+
     def list_newest_versions(self):
         """Get the newest versions of the publications (if there are versions higher than 1)
         :param limit: int, the number of publications to return
@@ -499,11 +516,12 @@ class PublicationStorage(PersistentStorage):
         with self.connection() as conn:
             with conn.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(query)
-                for publication in cursor:
+                n = cursor.rowcount
+                for publication in self.tqdm(cursor, total=n):
                     yield dict(publication)
 
 
-    def search_for(self, keywords: list, from_date=None, to_date=None, limit=0) -> iter:
+    def search_for(self, keywords: list, from_date=None, to_date=None, any_or_all='ALL', limit=0) -> iter:
         """Search for publications with the given keywords within a specified date range.
         :param keywords: list of str, the keywords to search for
         :param from_date: str or None, the start date for filtering (inclusive)
@@ -514,15 +532,15 @@ class PublicationStorage(PersistentStorage):
         # Prepare the keywords placeholder
         keywords_placeholder = sql.SQL(', ').join(sql.Literal("%{}%".format(k)) for k in keywords)
         # Base query with placeholders for dynamic parts
-        query_template = sql.SQL("""
+        query_template = sql.SQL(f"""
             SELECT
                 *
             FROM
                 newest_revision_with_fulltext_columns
             WHERE
-                (title ILIKE ANY(ARRAY[{keywords}])
-                OR abstract ILIKE ANY(ARRAY[{keywords}])
-                OR summary ILIKE ANY(ARRAY[{keywords}]))
+                (title ILIKE {any_or_all}(ARRAY[{keywords}])
+                OR abstract ILIKE {any_or_all}(ARRAY[{keywords}])
+                OR summary ILIKE {any_or_all}(ARRAY[{keywords}]))
         """)
         # Replace the placeholder in the base query
         query_filled = query_template.format(keywords=keywords_placeholder)
@@ -612,7 +630,7 @@ class PublicationStorage(PersistentStorage):
                 cursor.execute(query, (id_summarymethod,))
                 rowcount=cursor.rowcount
                 logger.info(f"Found [{rowcount}] publications without a summary.")
-                for publication in tqdm(cursor, total=rowcount):
+                for publication in self.tqdm(cursor, total=rowcount):
                     yield dict(publication)
 
     

@@ -19,8 +19,8 @@ class Summarizer:
 
 
     def summarize(self, text: str, n_sentences: int = 5) -> str:
-        prompt=f"""Respond with only the summary and nothing else. Summarize the following document into a maximum of {n_sentences} sentences, 
-        making sure you capture the essence and key points of the text: <begin text> {text} <end text>""",
+        prompt=f"""Summarize the following document into a maximum of {n_sentences} sentences, 
+        making sure you capture the essence and key points of the text. Respond with only the summary and nothing else: <begin text> {text} <end text>""",
         return self.llm.generate(prompt)
 
 
