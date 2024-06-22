@@ -99,7 +99,22 @@ class MedrXivScraper:
         #self.fetch_all_missing_pdfs(publications=publications)
         return publications
 
-    
+
+    def fetch_latest_publications(self, days: int = 0, fetch_pdfs=False) -> list[dict]:
+        """fetches the latest publications from medrXiv
+        :param days: the number of days to fetch publications, counting backwards from today. 
+            If 0, fetches all not yet ingested publications from the last day in the database 
+            until today
+        :return: a list of publications in the form of dictionaries
+        """
+        today = datetime.now().strftime('%Y-%m-%d')
+        if days<1:
+            start_date=self.db.latest_stored()
+        else:  #we want an overlap in case we didn't fetch the full day or late submissions
+            start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+        publications = self.fetch_from_medrXiv(start_date, today, fetch_pdfs=fetch_pdfs)
+        return publications
+
     def get_pdf_url(self, publication : dict) -> str:
         """creates a URL for full PDF download from a retrieved publication
 		
@@ -181,7 +196,21 @@ class MedrXivScraper:
             pdfpath = self.fetch_pdf_from_medrXiv(publication)
         return pdfpath
         
-                
+    def exclude_duplicates(self, publications: list[dict]) -> list[dict]:
+        """excludes duplicate publications from a list
+        :param publications: a list of publications in the form of dictionaries
+        :return: a list of publications without duplicates
+        """
+        dois = set()
+        unique_publications = []
+        for publication in publications:
+            doi = publication['doi']
+            if doi not in dois:
+                unique_publications.append(publication)
+                dois.add(doi)
+        return unique_publications  
+
+     
 
     def find_publications_without_pdf(self, only_highest_version=True):
         """finds publications in the database without a PDF

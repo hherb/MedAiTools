@@ -19,7 +19,8 @@ class Summarizer:
 
 
     def summarize(self, text: str, n_sentences: int = 5) -> str:
-        prompt=f"Respond with only the summary and nothing else. Summarize the following document into a maximum of {n_sentences} sentences: <begin text> {text} <end text>",
+        prompt=f"""Respond with only the summary and nothing else. Summarize the following document into a maximum of {n_sentences} sentences, 
+        making sure you capture the essence and key points of the text: <begin text> {text} <end text>""",
         return self.llm.generate(prompt)
 
 
@@ -49,6 +50,6 @@ if __name__ == "__main__":
 	Future research should aim at enhancing AI's clinical reasoning capabilities and exploring 
 	its integration with other technologies for improved healthcare delivery."""
 
-    summarizer=Summarizer("VERY_LONG")
-    print(summarizer.summarize(text, n_sentences=2))
+    summarizer=Summarizer("LONG")
+    print(summarizer.summarize(text, n_sentences=3))
         
