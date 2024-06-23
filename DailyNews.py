@@ -17,7 +17,6 @@ class NewsPanel(pn.viewable.Viewer):
     _callback = None
     def __init__(self, news=None, callback=full_paper):
         NewsPanel._callback = callback
-        print("Creating NewsPanel")
         self.newsfeed_panel = pn.Feed(load_buffer=20, scroll=True,sizing_mode='stretch_both')
         if not news:
             from PGMedrXivScraper import MedrXivScraper
@@ -26,7 +25,6 @@ class NewsPanel(pn.viewable.Viewer):
         else:
             self.news=news
         for n in self.news:
-            print(f"Adding news item: {n['title']}")
             self.newsfeed_panel.append( HeadlinePanel(n, self.on_paper_click).get_panel()) 
         self.panel = pn.panel(self.newsfeed_panel, sizing_mode='stretch_both')
         
@@ -36,9 +34,9 @@ class NewsPanel(pn.viewable.Viewer):
     @classmethod
     def on_paper_click(cls, event, news):
         if cls._callback:
-            cls._callback(news)
-        print(f"Paper ID clicked: {news['title']}")
-
+            cls._callback(news)  
+        else:
+            print(f"Full paper clicked: {news['title']}")
 
 
 
