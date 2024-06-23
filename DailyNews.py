@@ -15,8 +15,9 @@ def full_paper(news):
 
 class NewsPanel(pn.viewable.Viewer):
     _callback = None
-    def __init__(self, news=None, callback=full_paper):
+    def __init__(self, news=None, callback=full_paper, set_heading_callback=None):
         NewsPanel._callback = callback
+        self.set_heading=set_heading_callback
         self.newsfeed_panel = pn.Feed(load_buffer=20, scroll=True,sizing_mode='stretch_both')
         if not news:
             from PGMedrXivScraper import MedrXivScraper
@@ -24,10 +25,13 @@ class NewsPanel(pn.viewable.Viewer):
             self.news = self.scraper.fetch_latest_publications()
         else:
             self.news=news
+        i=0
         for n in self.news:
             self.newsfeed_panel.append( HeadlinePanel(n, self.on_paper_click).get_panel()) 
+            i+=1
         self.panel = pn.panel(self.newsfeed_panel, sizing_mode='stretch_both')
-        
+        self.set_heading(title_str=f"{i} matching publications found in archive")
+
     def __panel__(self):
         return self.panel
 

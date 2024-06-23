@@ -176,6 +176,36 @@ class PersistentStorage:
         except Exception as e:
             logger.error(f"Could not close all connections in the PostgreSQL connection pool. Error: {e}")
 
+    def count_publications(self):
+        """Get the number of publications stored in the database
+        :return: int, the number of publications stored in the database
+        """
+        query = "SELECT COUNT(1) FROM medrxiv;"
+        with self.connection() as conn:
+            cursor = conn.execute(query)
+            result = cursor.fetchone()
+        return result[0]
+    
+    def count_fulltexts(self):
+        """Get the number of fulltexts stored in the database
+        :return: int, the number of fulltexts stored in the database
+        """
+        query = "SELECT COUNT(1) FROM fulltext;"
+        with self.connection() as conn:
+            cursor = conn.execute(query)
+            result = cursor.fetchone()
+        return result[0]
+    
+    def count_ingested(self):
+        """Get the number of documents ingested into the vector store
+        :return: int, the number of documents ingested into the vector store
+        """
+        query = "SELECT COUNT(1) FROM data_raglibrarian;"
+        with self.connection() as conn:
+            cursor = conn.execute(query)
+            result = cursor.fetchone()
+        return result[0]
+
     def __del__(self):
         #self.close_all_connections()
         pass
@@ -267,7 +297,7 @@ class PublicationStorage(PersistentStorage):
         #     logger.info(e)
         #     self.hybrid_index = None
 
- 
+
 
 
     def ingest_pdf(self, pdfpath, force=False) -> str:

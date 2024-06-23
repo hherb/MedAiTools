@@ -148,10 +148,8 @@ class MedrXivPanel(pn.viewable.Viewer):
         else:
             from_date = None
             to_date = None
-        print(f"Searching for publications from {from_date} to {to_date}")
         publications = self.scraper.db.search_for(keywords=self.keywords.value.split(','), any_or_all = self.any_or_all.value, from_date=from_date, to_date=to_date)
 
-        print(f"Found publications")
         self.display_publications(publications)
 
     def open_pdf(self, publication,  event=None ):
@@ -183,7 +181,7 @@ class MedrXivPanel(pn.viewable.Viewer):
 
     def display_publications(self, publications: list[dict]):
         self.display_column.clear()
-        self.newspanel=NewsPanel(news=publications, callback=self.open_pdf)
+        self.newspanel=NewsPanel(news=publications, callback=self.open_pdf, set_heading_callback=self.set_heading)
         self.display_column.append(self.newspanel)
 
     def display_publications_old(self, publications: list[dict]):

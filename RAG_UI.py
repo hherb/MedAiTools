@@ -83,7 +83,7 @@ class PDFPanel(pn.viewable.Viewer):
         # print(response.source_nodes[0].score)
         for source in response.source_nodes:
             id= source.id_
-            sources+=f"{response.metadata[id].get('file_name')}, page {response.metadata[id].get('page_label')}, score: {source.score}<br>"
+            sources+=f"{response.metadata[id].get('filename')}, page {response.metadata[id].get('page')}, score: {source.score}<br>"
         display_response = f"{response.response.strip()}<hr>Source: {sources}"
         return display_response
     

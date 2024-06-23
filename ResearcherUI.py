@@ -23,6 +23,7 @@ from Researcher import research
 from MedrXivPanel import MedrXivPanel 
 from RAG_UI import PDFPanel
 from medai.tools.apikeys import load_api_keys  
+from PersistentStorage import PublicationStorage
 
 pn.extension('texteditor', loading_indicator=True, design="material")
 
@@ -89,10 +90,12 @@ notebook = pn.Tabs(('Research Assistant', research_assistant_panel),
                    margin=8, sizing_mode='stretch_both'
 )
 
+ps = PublicationStorage()
+publications_in_storage = ps.count_publications()
 
 # Instantiate the template with widgets displayed in the sidebar
 template = pn.template.FastListTemplate(
-    title="My Research Assistant",
+    title=f"My Research Assistant - {publications_in_storage} publications archived locally",
     sidebar=[user_setter, 
              openai_api_setter, 
              tavily_api_setter],
