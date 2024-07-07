@@ -140,12 +140,12 @@ async def a_pdf2md(pdf_filename: str, output_md_filename: str = None, method: st
         markdown_text = convert_pdf_to_md(pdf_filename, output_md_filename)
     else:
         raise ValueError(f"Unknown method: {method}")
+    #some PDFs will have line numbers - remove them unless requested not to do so
     if remove_all_line_numbers:
         remove_line_numbers(markdown_text)
     if output_md_filename is not None:
         async with aiofiles.open(output_md_filename, "w") as f:
             await f.write(markdown_text)
-
     return markdown_text
 
 async def async_list_pdf_files(directory):
@@ -185,6 +185,8 @@ def all_pdfs2md(pdf_directory: str, output_md_dir=None, maxnum=None, method="pym
     """Convert all PDF files in a directory to markdown files asynchronously."""
     i = 0
     logging.info(f"Listing files in directory: {pdf_directory}")
+    if output_md_dir is None:
+        output_md_dir = os.path.join(pdf_directory, 'markdown')
     """list all *.pdf files in the 'pdf_directory'"""
     allfiles = [file for file in os.listdir(pdf_directory) if file.endswith('.pdf')]
     donefiles = [file[:-3] for file in os.listdir(output_md_dir) if file.endswith('.md')]
@@ -282,7 +284,7 @@ async def a_main(pdf_directory: str):
 def main(pdf_directory: str):
     try:
         logging.info("Starting main function")
-        result = all_pdfs2md(pdf_directory, output_md_dir="./library/markdown", remove_all_line_numbers=True)
+        result = all_pdfs2md(pdf_directory, remove_all_line_numbers=True)
         logging.info(f"Completed with result: {result}")
     except Exception as e:
         logging.error(f"An error occurred: {e}", exc_info=True)
@@ -299,13 +301,4 @@ if __name__ == "__main__":
         print("Usage: python PDFParser.py <pdf_directory> - all pdfs in the directory will be converted to markdown")
         sys.exit(1)
     pdf_directory = os.path.abspath(sys.argv[1])
-    output_md_dir="./library/markdown"
-    files = [file for file in os.listdir(pdf_directory) if file.endswith('.pdf')]
-    print(f"Converting all PDF files in {len(files)} to markdown")
-    # for file in tqdm(files, desc="Converting PDFs to markdown", unit="file", total=len(files)):
-    #     mdfilepath = os.path.join(output_md_dir, f"{os.path.basename(file)}.md")
-    #     filepath=os.path.join(pdf_directory, file)
-    #     pdf2md(filepath, output_md_filename=mdfilepath, remove_all_line_numbers=True)
-
-    #asyncio.run(main(pdf_directory))
     main(pdf_directory)

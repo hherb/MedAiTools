@@ -23,6 +23,7 @@ from dotenv import load_dotenv
 import logging
 from medai.Settings import Settings
 from llama_index.llms.litellm import LiteLLM    #! pip install litellm
+import ollama #! pip install ollama
 
 s = Settings()
 
@@ -109,6 +110,34 @@ class Model:
         self.stop = stop
 
 
+class OllamaModel(Model):
+    def __init__(self, modelname):   
+        self.modelname=modelname               
+        info=ollama.show(modelname)
+        #Parameters in the returned list of dictionaries are unfortunately formatted as one single string, need to parse it
+        params = {param.split()[0]: param.split()[1] for param in info['parameters'].split('\n')}
+        self.parameter_size = info['details']['parameter_size']
+        self.quantization = info['details']['quantization_level']
+        self.family = info['details']['family']
+        try:
+            self.temperature=params['temperature']
+        except:
+            self.temperature=0.3
+        try:
+            self.num_ctx=params['num_ctx']
+        except:
+            self.num_ctx=0
+        self.max_tokens=self.num_tx/2   
+        self.system_prompt=info['system']
+
+
+
+def list_local_models():
+    models=ollama.list()
+    return(models['models'])
+
+def local_model_properties(model_name : str):
+    pass
 
 def get_local_default_model():
     return Model(modelname=s.LOCAL_DEFAULT_MODEL, api_key=s.LOCAL_LLM_API_KEY, api_base=s.LOCAL_LLM_API_BASE, temperature=0.3, max_tokens=4096, frequency_penalty=0.0, presence_penalty=0.0, stop=None)

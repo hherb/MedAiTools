@@ -71,9 +71,13 @@ class PDFPanel(pn.viewable.Viewer):
             user (str): The user's name
             instance (ChatInterface): The chat interface instance
         """
+        print(f"displayed_pdf: {self.displayed_pdf}")
         displayed_pdf=self.displayed_pdf
         if self.check_all_documents.value:
+            print("No metadata filter applied")
             displayed_pdf=None
+        else:
+            print(f"Metadata filter applied: {displayed_pdf}")
         response = self.RAG.query(contents, pdfpath=displayed_pdf)
         print(f"[{response.response}]")
         sources=""
@@ -100,9 +104,11 @@ class PDFPanel(pn.viewable.Viewer):
             self.RAG.ingest(filepath)
             self.displayed_pdf=filepath
             info.destroy()
+        else:
+            self.displayed_pdf=filepath
 
 if __name__ == "__main__":
     panel= PDFPanel()
     panel.servable()
-    #panel.set_pdf("/Users/hherb/src/github/MedAiTools/library/10.1101-2024.05.09.24307138.pdf.md")
+    panel.set_pdf("/Users/hherb/src/github/MedAiTools/library/10.1101-2024.05.09.24307138.pdf")
     pn.serve(panel)

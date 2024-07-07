@@ -24,6 +24,8 @@ from MedrXivPanel import MedrXivPanel
 from RAG_UI import PDFPanel
 from medai.tools.apikeys import load_api_keys  
 from PersistentStorage import PublicationStorage
+from EventDispatcher import EventDispatcher
+from medai import LLM   
 
 pn.extension('texteditor', loading_indicator=True, design="material")
 
@@ -59,9 +61,21 @@ terminal = pn.widgets.Terminal(
 #redirect all terminal output to our user unterface terminal
 sys.stdout = terminal
 
+def on_llm_selected(event):
+    print(f"selected LLM: {event.new}")
+
+# API key settings
 user_setter = pn.widgets.TextInput(name='User', placeholder='Enter your name here', sizing_mode='stretch_width')
 openai_api_setter = pn.widgets.TextInput(name='OpenAI API Key', placeholder='Enter your OpenAI API key here', sizing_mode='stretch_width')
 tavily_api_setter = pn.widgets.TextInput(name='Tavily API Key', placeholder='Enter your Tavily API key here', sizing_mode='stretch_width')
+API_accordion=pn.Accordion(name='API keys', sizing_mode='stretch_width')
+API_accordion.append(pn.Column(user_setter, openai_api_setter, tavily_api_setter, name='API Keys'))
+
+#our local LLMs - user selectable
+llm_setter = pn.widgets.Select(name="LLM", options=[model['name'] for model in LLM.list_local_models()])
+llm_setter.param.watch(on_llm_selected, 'value')
+LLM_accordion = pn.Accordion(name='local LLMs', sizing_mode='stretch_width')
+LLM_accordion.append(llm_setter)
 
 chat_bot = pn.chat.ChatInterface(callback=get_response, 
                                  user='Horst', 
@@ -80,8 +94,6 @@ research_assistant_panel= pn.Row(
 pdf_panel=PDFPanel()
 
 
-
-
 notebook = pn.Tabs(('Research Assistant', research_assistant_panel),
                    ('MedrXiv News', medrxiv_panel), 
                    #('Chat', chat_panel), 
@@ -96,9 +108,8 @@ publications_in_storage = ps.count_publications()
 # Instantiate the template with widgets displayed in the sidebar
 template = pn.template.FastListTemplate(
     title=f"My Research Assistant - {publications_in_storage} publications archived locally",
-    sidebar=[user_setter, 
-             openai_api_setter, 
-             tavily_api_setter],
+    sidebar=[API_accordion,
+             LLM_accordion],
 )
 
 # Append a layout to the main area, to demonstrate the list-like API

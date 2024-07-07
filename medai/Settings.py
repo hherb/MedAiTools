@@ -89,20 +89,23 @@ class Settings(metaclass=SingletonMeta):
             'TAVILY_API_SECRET' : '',
 
             #LLM
-            'LOCAL_LLM_API_BASE' : 'http://localhost:11434/v1',
-            'LOCAL_DEFAULT_MODEL' : 'openai/MaziyarPanahi/Llama-3-8B-Instruct-32k-v0.1-GGUF',
-            'LOCAL_32K_MODEL' : 'openai/MaziyarPanahi/Llama-3-8B-Instruct-32k-v0.1-GGUF',
-            'LOCAL_128K_MODEL' : 'openai/Bartowski/Phi-3-medium-128k-Instruct-GGUF',
-            'LOCAL_LLM_API_KEY' : 'lm_studio',
+            'LOCAL_LLM_API_BASE' : 'http://localhost:11434',
+            'LOCAL_DEFAULT_MODEL' : 'ollama/iLlama3_8b_Instruct_32k:latest',
+            'LOCAL_32K_MODEL' : 'ollama/Llama3_8b_Instruct_32k:latest',
+            #'LOCAL_128K_MODEL' : 'openai/Bartowski/Phi-3-medium-128k-Instruct-GGUF',
+            'LOCAL_128K_MODEL' : "ollama/phi3:14b-medium-128k-instruct-q5_K_M",
+            'LOCAL_LLM_API_KEY' : 'ollama',
             'OPENAI_API_BASE' : 'https://api.openai.com/v1',
             'OPENAI_MULTIMODAL_MODEL' : 'gpt-4o',
+
             #EMBEDDING
-            'EMBEDDING_MODEL' : 'BAAI/bge-m3',
-            'EMBEDDING_DIMENSIONS' : 1024,
-            #'EMBEDDING_DIMENSIONS' : 1536,
+            'EMBEDDING_BASE_URL' : 'http://localhost:11434',
+            'EMBEDDING_MODEL' : 'rjmalagon/gte-qwen2-1.5b-instruct-embed-f16', 
+            'EMBEDDING_DIMENSIONS' : 1536,
+
             #STORAGE
             'LOCAL_STORAGE_DIR' : '~/medai',
-            'PUBLICATION_DIR' : '~/src/github/MedAiTools/library',
+            'PUBLICATION_DIR' : '/Users/hherb/medai/library',
             'DBUSER' : 'medai',
             'DBPASS' : 'thisismedai',
             'DBNAME' : 'medai',

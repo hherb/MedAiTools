@@ -44,11 +44,11 @@ from llama_index.core.vector_stores.types import (
 )
 
 from llama_index.vector_stores.postgres import PGVectorStore
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+#from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 #from langchain.embeddings.huggingface import HuggingFaceBgeEmbeddings
 #from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 #from llama_index.embeddings.huggingface_optimum import OptimumEmbedding
-
+from llama_index.embeddings.ollama import OllamaEmbedding as Embedding
 from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.core.query_engine import RetrieverQueryEngine
 
@@ -242,34 +242,7 @@ class PublicationStorage(PersistentStorage):
         self.hybrid_index = None
         self.initiate_hybrid_vector_store()
 
-    def initiate_hybrid_vector_store(self):
-        """
-        Initiate the hybrid vector store. Create it if it doesn't exist yet, else load it from storage.
-        """
-        self.llamaindex_settings = Settings
-        
-        self.last_ingested = None #the most recent document ingested into the index
-
-        #set up our embedding model. It will be downloaded into a local cache directory 
-		#if it doesn't exist locally yet. For this, an internet connection would be required
-        logger.info(f"loading the embedding model {s.EMBEDDING_MODEL}")
-        #self._embedding_model = HuggingFaceBgeEmbedding(model_name=s.EMBEDDING_MODEL)
-        
-        #self._embedding_model=HuggingFaceEmbedding(model_name=s.EMBEDDING_MODEL)
-        self._embedding_model=HuggingFaceEmbedding(model_name='./bge-m3')
-        self.llamaindex_settings.embed_model = self._embedding_model
-
-        self.llamaindex_settings.chunk_size = 512  #preliminary hack - we'll change that when we use more sophisticated / semantic chunking methods
-        self.llamaindex_settings.batch_size = 20  # batch_size controls how many nodes are encoded with sparse vectors at once
-        self.llamaindex_settings.enable_hybrid = True  # create our vector store with hybrid indexing enabled
-        self.llamaindex_settings.enable_sparse = True
-
-        #self.llm = medai.LLM.LLM(medai.LLM.get_local_32k_model())
-        from llama_index.llms.litellm import LiteLLM
-        self.llm = LiteLLM(model=s.LOCAL_DEFAULT_MODEL,
-                            api_key=s.LOCAL_LLM_API_KEY,
-                            api_base=s.LOCAL_LLM_API_BASE)
-        self.llamaindex_settings.llm = self.llm
+    def initiate_vector_store(self):
         logger.info("setting up the vector store")
                
         self.hybrid_vector_store = PGVectorStore.from_params(
@@ -283,6 +256,36 @@ class PublicationStorage(PersistentStorage):
             hybrid_search=True,
             text_search_config="english",
         )
+
+    def initiate_hybrid_vector_store(self):
+        """
+        Initiate the hybrid vector store. Create it if it doesn't exist yet, else load it from storage.
+        """
+        self.llamaindex_settings = Settings
+        self.initiate_vector_store()
+        self.last_ingested = None #the most recent document ingested into the index
+
+        #set up our embedding model. It will be downloaded into a local cache directory 
+		#if it doesn't exist locally yet. For this, an internet connection would be required
+        logger.info(f"loading the embedding model {s.EMBEDDING_MODEL}")
+        #self._embedding_model = HuggingFaceBgeEmbedding(model_name=s.EMBEDDING_MODEL)
+        
+        #self._embedding_model=HuggingFaceEmbedding(model_name=s.EMBEDDING_MODEL)
+        self._embedding_model=Embedding(model_name=s.EMBEDDING_MODEL, base_url=s.EMBEDDING_BASE_URL)
+        self.llamaindex_settings.embed_model = self._embedding_model
+
+        self.llamaindex_settings.chunk_size = 512  #preliminary hack - we'll change that when we use more sophisticated / semantic chunking methods
+        self.llamaindex_settings.batch_size = 20  # batch_size controls how many nodes are encoded with sparse vectors at once
+        self.llamaindex_settings.enable_hybrid = True  # create our vector store with hybrid indexing enabled
+        self.llamaindex_settings.enable_sparse = True
+
+        #self.llm = medai.LLM.LLM(medai.LLM.get_local_32k_model())
+        from llama_index.llms.litellm import LiteLLM
+        self.llm = LiteLLM(model=s.LOCAL_DEFAULT_MODEL,
+                            api_key=s.LOCAL_LLM_API_KEY,
+                            api_base=s.LOCAL_LLM_API_BASE)
+        self.llamaindex_settings.llm = self.llm
+       
 
         self.storage_context = StorageContext.from_defaults(
             vector_store=self.hybrid_vector_store, 
@@ -308,9 +311,12 @@ class PublicationStorage(PersistentStorage):
         :return: str, the path to the ingested file
         """
         pdfpath = os.path.expanduser(pdfpath)
-        if self.file_is_ingested(os.path.basename(pdfpath)) and not force:
-            print(f"{pdfpath} has already been ingested")
-            return(pdfpath)
+        try:
+            if not force and self.file_is_ingested(os.path.basename(pdfpath)):
+                print(f"{pdfpath} has already been ingested")
+                return(pdfpath)
+        except Exception as e:
+            print(f"Error checking if {pdfpath} has been ingested: {e}")
         if not os.path.exists(pdfpath):
             print(f"{pdfpath} does not exist")
             return('')
@@ -325,7 +331,7 @@ class PublicationStorage(PersistentStorage):
     
 
 
-    def get_query_engine(self, top_k=5, pdfpath=None, simple=True):
+    def get_query_engine(self, top_k=5, pdfpath=None, simple=False):
         """Get a query engine for the RAG
         Args:
             top_k (int): The number of documents to retrieve
@@ -340,10 +346,10 @@ class PublicationStorage(PersistentStorage):
         #shall we interrogate only one or all documents in the vectorstore
         metafilters = []
         if pdfpath is not None:
-            print(f"-----> METADATA FILTER FOR file_name = {os.path.basename(pdfpath)}")
+            print(f"-----> METADATA FILTER FOR filename = {os.path.basename(pdfpath)}")
             metafilters = MetadataFilters(
                 filters=[
-                    MetadataFilter(key="file_name", value=os.path.basename(pdfpath)),
+                    MetadataFilter(key="filename", value=os.path.basename(pdfpath)),
                 ],
             )
 
@@ -392,7 +398,7 @@ class PublicationStorage(PersistentStorage):
         """
         filename = os.path.basename(filename)   #strip the parh from the filename if necessary
         with self.connection() as conn:
-            querytemplate = """select EXISTS(select 1 from data_raglibrarian where metadata_ ->> 'file_name' = {filename})"""
+            querytemplate = """select EXISTS(select 1 from data_raglibrarian where metadata_ ->> 'filename' = {filename})"""
             query = sql.SQL(querytemplate).format(filename=sql.Literal(filename))
             cursor = conn.execute(query)
             result = cursor.fetchone()
