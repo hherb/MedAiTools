@@ -132,12 +132,32 @@ class OllamaModel(Model):
 
 
 
+
+
 def list_local_models():
+    """
+    Returns a list of available local models.
+
+    This function uses the ollama library to retrieve a list of available local models. The returned list is then passed back as the result.
+
+    Args:
+        None
+
+    Returns:
+        A list of strings representing the names of available local models.
+    """
     models=ollama.list()
     return(models['models'])
 
 def local_model_properties(model_name : str):
     pass
+
+
+def update_local_model_db():
+    models=ollama.list()
+    for model in models:
+        if not in_local_model_db(model['name']): 
+            print(f"Adding model {model['name']} to local model database")
 
 def get_local_default_model():
     return Model(modelname=s.LOCAL_DEFAULT_MODEL, api_key=s.LOCAL_LLM_API_KEY, api_base=s.LOCAL_LLM_API_BASE, temperature=0.3, max_tokens=4096, frequency_penalty=0.0, presence_penalty=0.0, stop=None)

@@ -205,13 +205,39 @@ class PersistentStorage:
             cursor = conn.execute(query)
             result = cursor.fetchone()
         return result[0]
+    
+    def list_local_models(self):
+        query="SELECT * FROM models;"
+        with self.connection() as conn:
+            cursor = conn.execute(query)
+            result = cursor.fetchall()  
+        return result
+    
+    def local_model_exists(self, modelname):
+        query = sql.SQL(f"SELECT EXISTS(SELECT 1 FROM localmodels WHERE modelname = '{modelname}')")
+        with self.connection() as conn:
+            cursor = conn.execute(query)
+            result = cursor.fetchone()
+        return result[0]
+    
+    def update_local_models_from_ollama(self):
+        from medai import LLM
+        models=LLM.list_local_models()
+        for model in models:
+            if not local_model_exists(model['name']):
+                logger.info(f"Adding model {model['name']} to local model database")
+                # shortname, modelname, description, family, template, systemprompt, parameter_size, quantization, context_length, tokenizer_model, chat, embed, agent, function_calling, tool_use, min_memory, hfcard_url, summarizing, modelfile_size)
+
+                query = sql.SQL(f"""INSERT INTO localmodels (modelname, family, parameter_size, quantization,  context_length, modelfile_size) 
+                                VALUES ({model['name']}, {model['details']['family']}, {model['details']['parameter_size']}, {model['details']['quantization_level']},  {num_ctx}, {model['size']})""")
+                with self.connection() as conn:
+                    cursor = conn.execute(query)
+                    conn.commit()
 
     def __del__(self):
         #self.close_all_connections()
         pass
 
-    
- 
 
     
 class PublicationStorage(PersistentStorage):
@@ -268,9 +294,6 @@ class PublicationStorage(PersistentStorage):
         #set up our embedding model. It will be downloaded into a local cache directory 
 		#if it doesn't exist locally yet. For this, an internet connection would be required
         logger.info(f"loading the embedding model {s.EMBEDDING_MODEL}")
-        #self._embedding_model = HuggingFaceBgeEmbedding(model_name=s.EMBEDDING_MODEL)
-        
-        #self._embedding_model=HuggingFaceEmbedding(model_name=s.EMBEDDING_MODEL)
         self._embedding_model=Embedding(model_name=s.EMBEDDING_MODEL, base_url=s.EMBEDDING_BASE_URL)
         self.llamaindex_settings.embed_model = self._embedding_model
 
@@ -292,13 +315,16 @@ class PublicationStorage(PersistentStorage):
         )
 
         #try and load the index, if it exists
-        self.hybrid_index = VectorStoreIndex.from_vector_store(self.hybrid_vector_store, storage_context=self.storage_context, embed_model=self._embedding_model,)
-        # try:
-        #     self.hybrid_index = VectorStoreIndex.from_vector_store(storage_context=self.storage_context)
-        # except Exception as e:
-        #     logger.info("failed to activate hybrid index, not initialized yet?")
-        #     logger.info(e)
-        #     self.hybrid_index = None
+        try:
+            self.hybrid_index = VectorStoreIndex.from_vector_store(self.hybrid_vector_store, 
+                                                                   storage_context=self.storage_context, 
+                                                                   embed_model=self._embedding_model,)
+        
+        except Exception as e:
+            logger.info("failed to activate hybrid index, not initialized yet?")
+            logger.info(e)
+            self.hybrid_index = None 
+            #TODO: create vector store and index if not existing yet
 
 
 
@@ -321,6 +347,7 @@ class PublicationStorage(PersistentStorage):
             print(f"{pdfpath} does not exist")
             return('')
         logger.info(f"ingesting {pdfpath}") 
+        #TODO: use a more sophisticated PDF parser that analyzes images as well and doesn't crash on excessive graphic vectors
         documents=PDFParser.pdf2llama(pdfpath)
         #documents=SimpleDirectoryReader(input_files=[pdfpath]).load_data()
         logger.info(f"Loaded {len(documents)} nodes from {pdfpath}, indexing now ....")
