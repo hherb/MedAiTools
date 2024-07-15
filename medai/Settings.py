@@ -90,7 +90,7 @@ class Settings(metaclass=SingletonMeta):
 
             #LLM
             'LOCAL_LLM_API_BASE' : 'http://localhost:11434',
-            'LOCAL_DEFAULT_MODEL' : 'ollama/iLlama3_8b_Instruct_32k:latest',
+            'LOCAL_DEFAULT_MODEL' : 'ollama/Llama3_8b_Instruct_32k:latest',
             'LOCAL_32K_MODEL' : 'ollama/Llama3_8b_Instruct_32k:latest',
             #'LOCAL_128K_MODEL' : 'openai/Bartowski/Phi-3-medium-128k-Instruct-GGUF',
             'LOCAL_128K_MODEL' : "ollama/phi3:14b-medium-128k-instruct-q5_K_M",

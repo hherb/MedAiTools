@@ -42,7 +42,8 @@ class Model:
                 repeat_penalty=0.0,
                 presence_penalty=0.0,
                 stop=None, 
-                ):  
+                ): 
+        litellm.drop_params=True 
         self.settings= Settings()     
         self.modelname = modelname
         self.api_key = api_key
@@ -112,7 +113,10 @@ class Model:
 
 class OllamaModel(Model):
     def __init__(self, modelname):   
-        self.modelname=modelname               
+        super().__init__(modelname='ollama/'+modelname)
+        self.api_key = 'ollama'
+        self.api_base = 'http://localhost:11434'
+        #self.modelname=modelname               
         info=ollama.show(modelname)
         #Parameters in the returned list of dictionaries are unfortunately formatted as one single string, need to parse it
         params = {param.split()[0]: param.split()[1] for param in info['parameters'].split('\n')}
@@ -127,11 +131,30 @@ class OllamaModel(Model):
             self.num_ctx=params['num_ctx']
         except:
             self.num_ctx=0
-        self.max_tokens=self.num_tx/2   
-        self.system_prompt=info['system']
+        self.max_tokens=self.num_ctx/2  
+        try: 
+            self.system_prompt=info['details']['system']
+        except:
+            pass
 
 
 
+def answer_this(prompt : str, 
+                modelname : str = 'ollama/Llama3_8b_Instruct_32k:latest', 
+                api_base : str = 'http://localhost:11434', 
+                api_key : str ='ollama') -> str:
+    """
+    Asks an ollama model for text generation.
+    The model is selected based on the modelname parameter
+
+    returns the generated text
+    """
+    response = litellm.completion(
+        model=modelname, 
+        messages=[{ "content": f"{prompt}","role": "user"}], 
+        api_base="http://localhost:11434",
+    )
+    return(response.choices[0].message.content)
 
 
 def list_local_models():

@@ -36,14 +36,33 @@ load_api_keys(APIS)
 
 pn.extension('perspective', 'terminal', notifications=True, loading_indicator=True, design="material")
 
+async def get_response_async(contents):
+    info = pn.state.notifications.info('Waiting for the AI agent\'s response ...', duration=0)
+    notebook.active = 3  # debug tab
+    try:
+        # Set a timeout for the research coroutine
+        response = await asyncio.wait_for(research(contents), timeout=240)  # 4 minutes timeout
+    except asyncio.TimeoutError:
+        response = "The request timed out. Please try again."
+    finally:
+        info.destroy()
+        notebook.active = 0  # research assistant tab
+    return response
 
 def get_response(contents, user, instance):
-    info= pn.state.notifications.info('Waiting for the AI agents response ...', duration=0)
-    notebook.active = 3 #debug tab
-    response = asyncio.run(research(contents) )
-    info.destroy()
-    notebook.active = 0 #research assistant tab
+    #info= pn.state.notifications.info('Waiting for the AI agents response ...', duration=0)
+    #notebook.active = 3 #debug tab
+    if contents.startswith('@'):
+        #just answer a simple question
+        response = LLM.answer_this(contents[1:].strip())
+    else:
+        #do a full research
+        #response = asyncio.run(research(contents) )
+        return asyncio.run(get_response_async(contents))
+    #info.destroy()
+    #notebook.active = 0 #research assistant tab
     return response
+    
 
 def pdf2RAG(pdf):
     pdf_panel.set_pdf(pdf)
@@ -83,7 +102,10 @@ chat_bot = pn.chat.ChatInterface(callback=get_response,
                                  show_undo=False,
                                  sizing_mode='stretch_both')
 
-chat_bot.send("Ask me a research question", user="Assistant", respond=False)
+chat_bot.send("""Ask me a research question and I'll create a full report by my agents reseaching the literature and the internet. \n
+              For simple questions, start your question with '@" and I'll answer best I can from prior general knowledge""", 
+              user="Assistant", 
+              respond=False)
 
 research_assistant_panel= pn.Row(
         chat_bot, 
