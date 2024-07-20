@@ -24,7 +24,7 @@ from MedrXivPanel import MedrXivPanel
 from RAG_UI import PDFPanel
 from medai.tools.apikeys import load_api_keys  
 from PersistentStorage import PublicationStorage
-from EventDispatcher import EventDispatcher
+#from EventDispatcher import EventDispatcher
 from medai import LLM   
 
 pn.extension('texteditor', loading_indicator=True, design="material")
@@ -36,7 +36,20 @@ load_api_keys(APIS)
 
 pn.extension('perspective', 'terminal', notifications=True, loading_indicator=True, design="material")
 
+
 async def get_response_async(contents):
+    """
+    Async function to get the AI agent's response.
+    This function takes in some contents as input and then waits for
+    the research coroutine to complete. If a timeout occurs, it returns
+    a default error message.
+
+    Parameters:
+        contents (str): The text or other content to be processed by the AI agent.
+
+    Returns:
+        str: The response from the AI agent, either successfully obtained or an error message.
+    """
     info = pn.state.notifications.info('Waiting for the AI agent\'s response ...', duration=0)
     notebook.active = 3  # debug tab
     try:
@@ -50,21 +63,43 @@ async def get_response_async(contents):
     return response
 
 def get_response(contents, user, instance):
-    #info= pn.state.notifications.info('Waiting for the AI agents response ...', duration=0)
-    #notebook.active = 3 #debug tab
+    """
+    This function determines the type of query and accordingly calls either a full research or a simple question answering routine.
+
+    Parameters:
+    contents (str): The content to be processed by the AI agent.
+    user (object): The user object that initiated the request.
+    instance (object): An instance of the class handling the request.
+
+    Returns:
+    response (str): The response from the AI agent, which can be a research result or an answer to a simple question.
+    """
     if contents.startswith('@'):
-        #just answer a simple question
-        response = LLM.answer_this(contents[1:].strip())
-    else:
         #do a full research
-        #response = asyncio.run(research(contents) )
-        return asyncio.run(get_response_async(contents))
-    #info.destroy()
-    #notebook.active = 0 #research assistant tab
+         return asyncio.run(get_response_async(contents))
+    else:
+        #just answer a simple question
+        modelname = f"ollama/{llm_setter.value}"
+        print(f"model used:{modelname}")
+        print(f"attempting to answer question using LLM: {modelname}")
+        response = LLM.answer_this(contents[1:].strip(), 
+                                   modelname=modelname,
+                                   temperature=setter_llm_temperature.value,)
     return response
     
 
+
+
 def pdf2RAG(pdf):
+    """
+    Converts a PDF to the Research Assistant's format.
+
+    Parameters:
+        pdf (str): The path to the PDF file.
+
+    Returns:
+        str: A success message indicating that the PDF has been loaded into the Research Assistant.
+    """
     pdf_panel.set_pdf(pdf)
     notebook.active = 2 #interrogate tab
     return "PDF loaded into Research Assistant"
@@ -96,14 +131,46 @@ llm_setter.param.watch(on_llm_selected, 'value')
 LLM_accordion = pn.Accordion(name='local LLMs', sizing_mode='stretch_width')
 LLM_accordion.append(llm_setter)
 
-chat_bot = pn.chat.ChatInterface(callback=get_response, 
+setter_llm_temperature = pn.widgets.FloatSlider(name='Temperature', start=0.0, end=1.0, step=0.01, value=0.3)
+setter_llm_systemprompt = pn.widgets.TextAreaInput(name='System Prompt', placeholder='Enter your system prompt here', sizing_mode='stretch_width')
+llm_params = pn.Column(setter_llm_temperature, setter_llm_systemprompt, name='LLM Parameters')
+LLM_accordion.append(llm_params)
+
+setter_gptr_retriever = pn.widgets.Select(name="Retriever", options=['tavily', 'serper', 'groq',  'google',  'searxing', 'duckduckgo'], value='tavily')
+setter_gptr_provider = pn.widgets.Select(name="LLM provider", options=['openai', 'anthropic', 'groq',  'google',  'ollama'], value='ollama')
+setter_gptr_baseurl = pn.widgets.TextInput(name='LLM base URL', value="http://localhost:11434", sizing_mode='stretch_width')
+setter_gptr_fastllm = pn.widgets.TextInput(name='Fast LLM model', value="llama3-groq-tool-use:8b-q8_0", sizing_mode='stretch_width')
+setter_gptr_smartllm = pn.widgets.TextInput(name='Smart LLM model', value="nous-hermes2:34b-yi-q8_0", sizing_mode='stretch_width')
+setter_gptr_fast_token_limit = pn.widgets.IntInput(name='Fast token limit', value=3000, sizing_mode='stretch_width')
+setter_gptr_smart_token_limit = pn.widgets.IntInput(name='Smart token limit', value=4000, sizing_mode='stretch_width')
+setter_gptr_browse_chunk_max_length = pn.widgets.IntInput(name='Browse chunk max length', value=8192, sizing_mode='stretch_width')
+setter_gptr_summary_token_limit = pn.widgets.IntInput(name='Summary token limit', value=700, sizing_mode='stretch_width')
+setter_gptr_temperature = pn.widgets.FloatSlider(name='Temperature', start=0.0, end=1.0, step=0.01, value=0.3)
+setter_gptr_memory_backend= pn.widgets.Select(name="Memory backend", options=['local', 'remote'], value='local')
+setter_gptr_total_words = pn.widgets.IntInput(name='Total words', value=800, sizing_mode='stretch_width')
+setter_gptr_report_format = pn.widgets.TextInput(name='Report format', value="APA", sizing_mode='stretch_width')
+setter_gptr_max_iterations = pn.widgets.IntInput(name='Max iterations', value=5, sizing_mode='stretch_width')
+setter_gptr_agent_role = pn.widgets.TextInput(name='Agent role', value=None, sizing_mode='stretch_width')
+setter_gptr_scraper = pn.widgets.TextInput(name='Scraper', value="bs", sizing_mode='stretch_width')
+setter_gptr_max_subtopics = pn.widgets.IntInput(name='Max subtopics', value=3, sizing_mode='stretch_width')
+setter_gptr_max_search_results_per_query = pn.widgets.IntInput(name='Max search results per query', value=10, sizing_mode='stretch_width')
+setter_gptr_user_agent = pn.widgets.TextInput(name='User agent', value="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/")
+setter_gptr_embedding_provider = pn.widgets.Select(name="Embedding provider", options=['openai', 'anthropic', 'groq',  'google',  'ollama'], value='ollama')    
+setter_gptr_embedding_model= pn.widgets.TextInput(name='Embedding model', value="mxbai-embed-large", sizing_mode='stretch_width')
+gptr_params = pn.Column(setter_gptr_retriever, setter_gptr_provider, setter_gptr_baseurl, setter_gptr_fastllm, setter_gptr_smartllm, setter_gptr_fast_token_limit, setter_gptr_smart_token_limit, setter_gptr_browse_chunk_max_length, setter_gptr_summary_token_limit, setter_gptr_temperature, setter_gptr_memory_backend, setter_gptr_total_words, setter_gptr_report_format, setter_gptr_max_iterations, setter_gptr_agent_role, setter_gptr_scraper, setter_gptr_max_subtopics, setter_gptr_max_search_results_per_query, setter_gptr_user_agent, setter_gptr_embedding_provider, setter_gptr_embedding_model, name='GPT Researcher Parameters')
+LLM_accordion.append(gptr_params)
+
+chat_bot = pn.chat.ChatInterface(callback=get_response,
+                                 callback_exception='verbose', 
                                  user='Horst', 
                                  show_rerun=False, 
                                  show_undo=False,
                                  sizing_mode='stretch_both')
 
-chat_bot.send("""Ask me a research question and I'll create a full report by my agents reseaching the literature and the internet. \n
-              For simple questions, start your question with '@" and I'll answer best I can from prior general knowledge""", 
+chat_bot.send("""Ask me any question, and I'll try to get the selected LLM to anser it.
+              If you want a comprehensive report, start the question with '@' and I will get my agents to research the literature 
+              and the internet for you.
+              """, 
               user="Assistant", 
               respond=False)
 

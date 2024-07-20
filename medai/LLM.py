@@ -142,7 +142,8 @@ class OllamaModel(Model):
 def answer_this(prompt : str, 
                 modelname : str = 'ollama/Llama3_8b_Instruct_32k:latest', 
                 api_base : str = 'http://localhost:11434', 
-                api_key : str ='ollama') -> str:
+                api_key : str ='ollama',
+                temperature : float=0.3,) -> str:
     """
     Asks an ollama model for text generation.
     The model is selected based on the modelname parameter
@@ -151,8 +152,11 @@ def answer_this(prompt : str,
     """
     response = litellm.completion(
         model=modelname, 
-        messages=[{ "content": f"{prompt}","role": "user"}], 
+        messages=[{ "content": f"{prompt}","role": "user", "name" : modelname}], 
         api_base="http://localhost:11434",
+        api_key=api_key,
+        temperature=temperature,
+        
     )
     return(response.choices[0].message.content)
 
