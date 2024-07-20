@@ -80,29 +80,30 @@ class MedrXivScraper:
             data = response.json()
             publications = data.get('collection', [])
             all_publications.extend(publications)
+            for publication in tqdm(publications, total=len(publications), desc="Inserting into database"):
+                publication['id'] = self.db.upsert(publication)
+                if fetch_pdfs:
+                    self.fetch_pdf_from_medrXiv(publication, upsert=True)
+                    self.callback_notification(f"inserted {len(publications)} into database including PDFs")
             # Check if more results are available
             messages = data.get('messages', [])
+            pprint(messages)
             if messages:
                 message = messages[0]
-                total_items = message.get('count', 0)
-                if cursor + len(publications) >= total_items:
+                total_items = message.get('total', 0)
+                print(f"message={message}, total_items={total_items}")
+                if cursor + len(all_publications) >= total_items:
                     break  # No more results
                 cursor += len(publications)
             else:
                 break  # No messages, likely no more results
         self.callback_notification(f"fetched {len(all_publications)} publications")
-        for publication in tqdm(all_publications, total=len(all_publications), desc="Inserting into database"):
-            publication['id'] = self.db.upsert(publication)
-            #print(publication['id'])
-            if fetch_pdfs:
-                self.fetch_pdf_from_medrXiv(publication, upsert=True)
-        #results = self.db.bulk_upsert(all_publications)
-        self.callback_notification(f"inserted {len(all_publications)} into database including PDFs")
+        
         #self.fetch_all_missing_pdfs(publications=publications)
-        return publications
+        return all_publications
 
 
-    def fetch_latest_publications(self, days:int = 0, fetch_pdfs:bool=False) -> list[dict]:
+    def fetch_latest_publications(self, days:int = 0, start_date: str = None, fetch_pdfs:bool=False) -> list[dict]:
         """fetches the latest publications from medrXiv
         :param days: the number of days to fetch publications, counting backwards from today. 
             If 0, fetches all not yet ingested publications from the last day in the database 
@@ -111,9 +112,10 @@ class MedrXivScraper:
             which is either the specified number of days until today, or from the last stored date until today
         """
         today = datetime.now().strftime('%Y-%m-%d')
-        if days==0:
+        
+        if days==0 and not start_date:
             start_date=self.db.latest_stored()
-        else:  #we want an overlap in case we didn't fetch the full day or late submissions
+        elif days>0:  #we want an overlap in case we didn't fetch the full day or late submissions
             start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
         logging.info(f"Fetching publications from {start_date} to {today}")
         if start_date != today:
@@ -121,7 +123,7 @@ class MedrXivScraper:
                 self.fetch_from_medrXiv(start_date, today, fetch_pdfs=fetch_pdfs)
             except Exception as e:
                 logging.error(f"Failed to fetch publications: {e}")
-        self.update_summaries()
+        #self.update_summaries()
         return self.db.fetch_daterange(start_date, today)
     
     def update_summaries(self):
@@ -194,7 +196,7 @@ class MedrXivScraper:
         for publication in publications:
                 result = self.fetch_pdf_from_medrXiv(publication)
                 if result is not None: #a pdf has been downloaded, wait a bit before fetching the next one
-                    sleep(random.randint(3,12)) #don't hammer the medrXiv server needlessly
+                    sleep(random.randint(1,6)) #don't hammer the medrXiv server needlessly
 
 
     def has_pdf(self, publication: dict) -> bool:
@@ -523,10 +525,11 @@ class MedrXivAssistant:
 
       
 if __name__=="__main__":
-    
     scraper = MedrXivScraper()
-    scraper.fetch_all_missing_pdfs()
-    assistant = MedrXivAssistant()
-    assistant.summarize_all_abstracts()
+    #scraper.fetch_latest_publications(start_date="2024-06-01", fetch_pdfs=False)
+    #scraper.fetch_all_missing_pdfs()
+    scraper.update_summaries()
+    #assistant = MedrXivAssistant()
+    #assistant.summarize_all_abstracts()
 
     

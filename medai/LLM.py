@@ -116,8 +116,8 @@ class OllamaModel(Model):
         super().__init__(modelname='ollama/'+modelname)
         self.api_key = 'ollama'
         self.api_base = 'http://localhost:11434'
-        #self.modelname=modelname               
-        info=ollama.show(modelname)
+        self.modelname=modelname               
+        self.info=ollama.show(modelname)
         #Parameters in the returned list of dictionaries are unfortunately formatted as one single string, need to parse it
         params = {param.split()[0]: param.split()[1] for param in info['parameters'].split('\n')}
         self.parameter_size = info['details']['parameter_size']
@@ -156,7 +156,6 @@ def answer_this(prompt : str,
         api_base="http://localhost:11434",
         api_key=api_key,
         temperature=temperature,
-        
     )
     return(response.choices[0].message.content)
 
@@ -191,6 +190,9 @@ def get_local_default_model():
 
 def get_local_32k_model():
     return Model(modelname=s.LOCAL_32K_MODEL, api_key=s.LOCAL_LLM_API_KEY, api_base=s.LOCAL_LLM_API_BASE, temperature=0.3, max_tokens=32000, frequency_penalty=0.0, presence_penalty=0.0, stop=None)
+
+def get_local_128k_model():
+    return Model(modelname=s.LOCAL_128K_MODEL, api_key=s.LOCAL_LLM_API_KEY, api_base=s.LOCAL_LLM_API_BASE, temperature=0.3, max_tokens=128000, frequency_penalty=0.0, presence_penalty=0.0, stop=None)
 
 def get_openai_multimodal_model(apikey=None):
     api_key=apikey

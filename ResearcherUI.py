@@ -19,7 +19,7 @@ from time import sleep
 import asyncio
 import sys
 
-from Researcher import research
+from Researcher import research, AVAILABLE_CONFIGS
 from MedrXivPanel import MedrXivPanel 
 from RAG_UI import PDFPanel
 from medai.tools.apikeys import load_api_keys  
@@ -120,8 +120,12 @@ def on_llm_selected(event):
 
 # API key settings
 user_setter = pn.widgets.TextInput(name='User', placeholder='Enter your name here', sizing_mode='stretch_width')
-openai_api_setter = pn.widgets.TextInput(name='OpenAI API Key', placeholder='Enter your OpenAI API key here', sizing_mode='stretch_width')
+serper_api_setter = pn.widgets.TextInput(name='Serper API Key', placeholder='Enter your Serper API key here', sizing_mode='stretch_width')
 tavily_api_setter = pn.widgets.TextInput(name='Tavily API Key', placeholder='Enter your Tavily API key here', sizing_mode='stretch_width')
+openai_api_setter = pn.widgets.TextInput(name='OpenAI API Key', placeholder='Enter your OpenAI API key here', sizing_mode='stretch_width')
+groq_api_setter = pn.widgets.TextInput(name='Groq API Key', placeholder='Enter your Groq API key here', sizing_mode='stretch_width')
+huggingface_api_setter = pn.widgets.TextInput(name='Huggingface API Key', placeholder='Enter your Huggingface API key here', sizing_mode='stretch_width')
+google_api_setter = pn.widgets.TextInput(name='Google API Key', placeholder='Enter your Google API key here', sizing_mode='stretch_width')
 API_accordion=pn.Accordion(name='API keys', sizing_mode='stretch_width')
 API_accordion.append(pn.Column(user_setter, openai_api_setter, tavily_api_setter, name='API Keys'))
 
@@ -136,8 +140,8 @@ setter_llm_systemprompt = pn.widgets.TextAreaInput(name='System Prompt', placeho
 llm_params = pn.Column(setter_llm_temperature, setter_llm_systemprompt, name='LLM Parameters')
 LLM_accordion.append(llm_params)
 
-setter_gptr_retriever = pn.widgets.Select(name="Retriever", options=['tavily', 'serper', 'groq',  'google',  'searxing', 'duckduckgo'], value='tavily')
-setter_gptr_provider = pn.widgets.Select(name="LLM provider", options=['openai', 'anthropic', 'groq',  'google',  'ollama'], value='ollama')
+setter_gptr_retriever = pn.widgets.Select(name="Retriever", options=['tavily', 'serper',  'google',  'searxing', 'duckduckgo'], value='tavily')
+setter_gptr_provider = pn.widgets.Select(name="LLM provider", options=list(AVAILABLE_CONFIGS.keys()), value='ollama')
 setter_gptr_baseurl = pn.widgets.TextInput(name='LLM base URL', value="http://localhost:11434", sizing_mode='stretch_width')
 setter_gptr_fastllm = pn.widgets.TextInput(name='Fast LLM model', value="llama3-groq-tool-use:8b-q8_0", sizing_mode='stretch_width')
 setter_gptr_smartllm = pn.widgets.TextInput(name='Smart LLM model', value="nous-hermes2:34b-yi-q8_0", sizing_mode='stretch_width')
@@ -167,7 +171,7 @@ chat_bot = pn.chat.ChatInterface(callback=get_response,
                                  show_undo=False,
                                  sizing_mode='stretch_both')
 
-chat_bot.send("""Ask me any question, and I'll try to get the selected LLM to anser it.
+chat_bot.send("""Ask me any question, and I'll try to get the selected LLM to answer it.
               If you want a comprehensive report, start the question with '@' and I will get my agents to research the literature 
               and the internet for you.
               """, 

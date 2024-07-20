@@ -1,4 +1,4 @@
-from medai.LLM import LLM, get_local_32k_model, get_local_default_model, get_openai_multimodal_model
+from medai.LLM import LLM, get_local_32k_model, get_local_default_model, get_openai_multimodal_model, answer_this
 
 TEXTTYPES=("SHORT", "LONG", "VERY_LONG")
 
@@ -16,12 +16,16 @@ class Summarizer:
         self.model=model
         self.texttype=texttype
         self.llm=LLM(model=self.model)
+        #print(f"Summarizer initialized with texttype: {texttype}, using model: {model.modelname}")
 
 
     def summarize(self, text: str, n_sentences: int = 5) -> str:
         prompt=f"""Summarize the following document into a maximum of {n_sentences} sentences, 
-        making sure you capture the essence and key points of the text. Respond with only the summary and nothing else: <begin text> {text} <end text>""",
-        return self.llm.generate(prompt)
+        making sure you capture the essence and key points of the text. 
+        Respond with only the summary of the text in dot points and nothing else: 
+        <begin text> {text} <end text>""",
+        #return self.llm.generate(prompt)
+        return answer_this(prompt)
 
 
 if __name__ == "__main__":

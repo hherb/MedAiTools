@@ -25,7 +25,7 @@ QUERY_TEMPLATE = """Write a detailed and well referenced report about the follow
                 peer reviewed biomedical journals for references. """
 
 #The API keys needed for this to work - they will be loaded from the os environment:
-APIS=('OPENAI_API_KEY', 'TAVILY_API_KEY', 'LLAMA_CLOUD_API_KEY')
+APIS=('OPENAI_API_KEY', 'TAVILY_API_KEY', 'LLAMA_CLOUD_API_KEY', 'GOOGLE_API_KEY', 'ANTHROPIC_API_KEY', 'HUGGINGFACE_API_KEY', 'GROQ_API_KEY')
 load_api_keys(APIS)
 
 
@@ -39,7 +39,7 @@ class Configuration:
     Attributes:
         config (dict): A dictionary containing all the configuration parameters.
     """
-    def __init__(self, **kwargs):
+    def __init__(self, config_file=None, **kwargs):
         """
         Initialize the Configuration object.
         
@@ -60,8 +60,19 @@ class Configuration:
         self.config['SCRAPER'] = 'bs'
         self.config['MAX_SUBTOPICS'] = 3
         self.config['TEMPERATURE'] = 0.55
+    
+        if config_file is not None:
+            try:
+                with open(config_file, 'r') as f:
+                    self.config = json.load(f)
+            except Exception as e:
+                print(f"Error loading configuration from file: {e}")
+                #save the new configuration to the file
+            if config_file is not None:
+                self.save(config_file)
         for key in kwargs:
             self.config[key] = kwargs[key]
+        
 
     def __getitem__(self, key):
         return self.config[key]
@@ -81,14 +92,19 @@ class Configuration:
             json.dump(self.config, f)
 
     def load(self, path="./researcher_config.json"):
-        with open(path, 'r') as f:
-            self.config = json.load(f)
+        try:
+            with open(path, 'r') as f:
+                self.config = json.load(f)
+        except Exception as e: 
+            print(f"Error loading configuration from file: {e}")
+            #save defaults into new config file
+            self.save()
 
 
 
 class OpenAI_Config(Configuration):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, config_file="openai.json", **kwargs):
+        super().__init__(config_file=config_file, **kwargs)
         self.config['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY', None)
         self.config['LLM_PROVIDER']='openai'
         self.config['FAST_LLM_MODEL'] = 'gpt-4o-mini'
@@ -96,8 +112,8 @@ class OpenAI_Config(Configuration):
         
 
 class Ollama_Config(Configuration):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, config_file="ollama.json", **kwargs):
+        super().__init__(config_file=config_file, **kwargs)
         self.config['LLM_PROVIDER']='ollama'
         self.config["OLLAMA_BASE_URL"] = "http://localhost:11434" 
         self.config["EMBEDDING_PROVIDER"] = "ollama"
@@ -107,8 +123,8 @@ class Ollama_Config(Configuration):
         
 
 class Groq_config(Configuration):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, config_file="groq.json", **kwargs):
+        super().__init__(config_file=config_file, **kwargs)
         self.config['LLM_PROVIDER']='groq'
         self.config['GROQ_API_KEY'] = os.getenv('GROQ_API_KEY', None)
         self.config['FAST_LLM_MODEL'] = 'Mixtral-8x7b-32768'
@@ -117,8 +133,8 @@ class Groq_config(Configuration):
 
      
 class Anthropic_Config(Configuration):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, config_file="anthropic.json", **kwargs):
+        super().__init__(config_file=config_file, **kwargs)
         self.config['LLM_PROVIDER']='anthropic'
         self.config['ANTHROPIC_API_KEY'] = os.getenv('ANTHROPIC_API_KEY', None)
         self.config['FAST_LLM_MODEL'] = 'claude-3-haiku-20240307'
@@ -126,25 +142,35 @@ class Anthropic_Config(Configuration):
         
 
 class Huggingface_Config(Configuration):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, config_file="huggingface.json", **kwargs):
+        super().__init__(config_file=config_file, **kwargs)
         self.config['LLM_PROVIDER']='huggingface'
         self.config['HUGGINGFACE_API_KEY'] = os.getenv('HUGGINGFACE_API_KEY', None)
         self.config['FAST_LLM_MODEL'] = 'HuggingFaceH4/zephyr-7b-beta'
         self.config['SMART_LLM_MODEL'] = 'HuggingFaceH4/zephyr-7b-beta'
+
+class Google_Config(Configuration):
+    def __init__(self, config_file="google.json", **kwargs):
+        super().__init__(config_file=config_file, **kwargs)
+        self.config['LLM_PROVIDER']='google'
+        self.config['GOOGLE_API_KEY'] = os.getenv('GOOGLE_API_KEY', None)
+        self.config['FAST_LLM_MODEL'] = 'gemini-1.5-flash'
+        self.config['SMART_LLM_MODEL'] = 'gemini-1.5-flash'
         
         
+AVAILABLE_CONFIGS={'openai':OpenAI_Config, 
+                   'ollama':Ollama_Config, 
+                   'groq':Groq_config, 
+                   'anthropic':Anthropic_Config, 
+                   'huggingface':Huggingface_Config, 
+                   'google':Google_Config}
 
-
-async def research(query: str, output_fname : str = None, output_path : str = './reports') -> str: 
+async def research(query: str, report_type = "research_report", output_fname : str = None, output_path : str = './reports') -> str: 
     """Conduct research on the given query and write a report on it. 
        The report is returned as a string. 
        If output_fname is provided, the report is written to that file."""
 
     load_api_keys()
-    
-    # Report Type
-    report_type = "research_report"
     
     # Initialize the researcher QUERY_TEMPLATE.format(query=query)
     print("Initialising researcher")

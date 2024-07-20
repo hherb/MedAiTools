@@ -80,7 +80,7 @@ class Settings(metaclass=SingletonMeta):
         # Define your default settings here
         settings= {  
             #APIKEYS
-            'LOCAL_LLM_API_KEY' : 'lm_studio',
+            'LOCAL_LLM_API_KEY' : 'ollama',
             'OPENAI_API_KEY' : '',
             'HUGGINGFACE_API_KEY' : '',
             'GROQ_API_KEY' : '',
@@ -112,6 +112,8 @@ class Settings(metaclass=SingletonMeta):
             'HOST' : 'localhost',
             'PORT' : 5432,
             'RAGTABLE' : 'raglibrarian',
+            'RESEARCHER_CONFIG_FILE' : './researcher_config.json',
+
         
         }
         return settings
