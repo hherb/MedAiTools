@@ -146,9 +146,29 @@ def answer_this(prompt : str,
                 temperature : float=0.3,) -> str:
     """
     Asks an ollama model for text generation.
-    The model is selected based on the modelname parameter
 
-    returns the generated text
+    Parameters
+    ----------
+    prompt : str
+        The input prompt to generate text from.
+    modelname : str, optional (default='ollama/Llama3_8b_Instruct_32k:latest')
+        The name of the OLLAMA model to use. This determines which model's parameters are used for generation.
+    api_base : str, optional (default='http://localhost:11434')
+        The base URL of the API endpoint to send requests to.
+    api_key : str, optional (default='ollama')
+        The API key to use when sending requests.
+    temperature : float, optional (default=0.3)
+        A value controlling the randomness and diversity of generated text.
+
+    Returns
+    -------
+    str
+        The generated text in response to the input prompt.
+
+    Raises
+    ------
+    Exception
+        Any exceptions raised during the API request or processing the response.
     """
     response = litellm.completion(
         model=modelname, 

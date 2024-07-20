@@ -1,21 +1,9 @@
-from medai.LLM import LLM, get_local_32k_model, get_local_default_model, get_openai_multimodal_model, answer_this
-
-TEXTTYPES=("SHORT", "LONG", "VERY_LONG")
+from medai.LLM import answer_this
 
 class Summarizer:
-    def __init__(self, texttype: TEXTTYPES="LONG"):
+    def __init__(self, modelname='ollama/Llama3_8b_Instruct_32k:latest'):
         
-        if texttype == "SHORT":
-            model=get_local_default_model()
-        elif texttype == "LONG":
-            model=get_local_32k_model()
-        elif texttype == "VERY_LONG":
-            model=get_openai_multimodal_model()
-        else:
-            raise ValueError(f"Unknown texttype: {texttype}")
-        self.model=model
-        self.texttype=texttype
-        self.llm=LLM(model=self.model)
+        self.modelname=modelname
         #print(f"Summarizer initialized with texttype: {texttype}, using model: {model.modelname}")
 
 
@@ -25,7 +13,7 @@ class Summarizer:
         Respond with only the summary of the text in dot points and nothing else: 
         <begin text> {text} <end text>""",
         #return self.llm.generate(prompt)
-        return answer_this(prompt)
+        return answer_this(prompt, modelname=self.modelname)
 
 
 if __name__ == "__main__":
@@ -54,6 +42,6 @@ if __name__ == "__main__":
 	Future research should aim at enhancing AI's clinical reasoning capabilities and exploring 
 	its integration with other technologies for improved healthcare delivery."""
 
-    summarizer=Summarizer("LONG")
+    summarizer=Summarizer()
     print(summarizer.summarize(text, n_sentences=3))
         
