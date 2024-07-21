@@ -29,6 +29,20 @@ class SingletonMeta(type):
                 instance = super().__call__(*args, **kwargs)
                 cls._instances[cls] = instance
             return cls._instances[cls]
+        
+class SharedMemory(metaclass=SingletonMeta):
+    """A class to manage shared memory between different instances of the LLM class"""
+    def __init__(self):
+        self.shared_memory = {}
+    
+    def set(self, key, value):
+        self.shared_memory[key] = value
+    
+    def get(self, key):
+        return self.shared_memory.get(key, None)
+
+    def clear(self):
+        self.shared_memory = {}
 
 class Settings(metaclass=SingletonMeta):
     """
@@ -105,7 +119,8 @@ class Settings(metaclass=SingletonMeta):
 
             #STORAGE
             'LOCAL_STORAGE_DIR' : '~/medai',
-            'PUBLICATION_DIR' : '/Users/hherb/medai/library',
+            #'PUBLICATION_DIR' : '/Users/hherb/medai/library',
+            'PUBLICATION_DIR' : '~/medai/library',
             'DBUSER' : 'medai',
             'DBPASS' : 'thisismedai',
             'DBNAME' : 'medai',

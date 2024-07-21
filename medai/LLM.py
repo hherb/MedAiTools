@@ -31,6 +31,27 @@ s = Settings()
 logging.getLogger('LiteLLM').setLevel(logging.ERROR)
 logging.getLogger('httpx').setLevel(logging.ERROR)
 
+def get_providers():
+    return(['ollama', 'huggingface', 'groq', 'anthropic', 'openai', 'google'])
+
+def get_models(provider='ollama'):
+        
+    if provider=='ollama':
+        return([model['name'] for model in list_local_models()])
+    if provider=='huggingface':
+        return(['enter manually'])
+    if provider=='groq':
+        return(['mixtral-8x7b-32768', 'llama3-70b-8192', 'llama3-8b-8192', 'llama2-70b-4096', 'gemma-7b-it'])
+    if provider=='anthropic':
+        return(litellm.anthropic_models)
+    if provider=='openai':
+        return([model for model in litellm.open_ai_chat_completion_models if model.startswith('gpt')])
+    if provider=='google':
+        return(['gemini/gemini-1.5-pro-latest'])
+    
+    raise ValueError(f"Provider {provider} not supported. Supported providers are {LLM_PROVIDERS}")    
+
+
 class Model:
     def __init__(self, modelname=s.LOCAL_DEFAULT_MODEL, 
                 api_key=s.LOCAL_LLM_API_KEY,
@@ -138,7 +159,19 @@ class OllamaModel(Model):
             pass
 
 
+def llm_response(prompt, 
+                 provider = 'ollama',
+                 modelname = 'Llama3_8b_Instruct_32k:latest',
+                 api_key = 'ollama',
+                 api_base = None, 
+                 temperature=0.3):
+    messages = [{"role": "user", "content": f"{prompt}"}]
+    if provider in ['ollama', 'huggingface', 'groq']:
+        modelname = f"{provider}/{modelname}"
+    response = litellm.completion(model=modelname, messages=messages, temperature=temperature)
+    return(response.choices[0].message.content)
 
+    
 def answer_this(prompt : str, 
                 modelname : str = 'ollama/Llama3_8b_Instruct_32k:latest', 
                 api_base : str = 'http://localhost:11434', 

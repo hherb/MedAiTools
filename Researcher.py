@@ -25,7 +25,7 @@ QUERY_TEMPLATE = """Write a detailed and well referenced report about the follow
                 peer reviewed biomedical journals for references. """
 
 #The API keys needed for this to work - they will be loaded from the os environment:
-APIS=('OPENAI_API_KEY', 'TAVILY_API_KEY', 'LLAMA_CLOUD_API_KEY', 'GOOGLE_API_KEY', 'ANTHROPIC_API_KEY', 'HUGGINGFACE_API_KEY', 'GROQ_API_KEY')
+APIS=('OPENAI_API_KEY', 'TAVILY_API_KEY', 'LLAMA_CLOUD_API_KEY', 'GEMINI_API_KEY', 'ANTHROPIC_API_KEY', 'HUGGINGFACE_API_KEY', 'GROQ_API_KEY')
 load_api_keys(APIS)
 
 

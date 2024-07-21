@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import os
 import panel as pn   #! pip install panel
 from panel.widgets import Tqdm
 from time import sleep
@@ -23,6 +24,7 @@ from Researcher import research, AVAILABLE_CONFIGS
 from MedrXivPanel import MedrXivPanel 
 from RAG_UI import PDFPanel
 from medai.tools.apikeys import load_api_keys  
+from medai.Settings import Settings
 from PersistentStorage import PublicationStorage
 #from EventDispatcher import EventDispatcher
 from medai import LLM   
@@ -31,11 +33,116 @@ pn.extension('texteditor', loading_indicator=True, design="material")
 
 #The API keys needed for this to work - they will be loaded from the os environment:
 
-APIS=('OPENAI_API_KEY', 'TAVILY_API_KEY', 'LLAMA_CLOUD_API_KEY')
+APIS=('OPENAI_API_KEY', 'TAVILY_API_KEY', 'LLAMA_CLOUD_API_KEY', 'GROQ_API_KEY', 'ANTHROPIC_API_KEY', 'HUGGINGFACE_API_KEY', 'GEMINI_API_KEY')
 load_api_keys(APIS)
 
 pn.extension('perspective', 'terminal', notifications=True, loading_indicator=True, design="material")
 
+class APIKeySettings:
+    def __init__(self, user=None):
+        self.api={}
+        self.api['user'] = user or os.getenv('USER', 'Anonymous')
+        self.api['serper'] = os.getenv('SERPER_API_KEY', None)
+        self.api['tavily'] = os.getenv('TAVILY_API_KEY', None)
+        self.api['openai'] = os.getenv('OPENAI_API_KEY', None)
+        self.api['groq'] = os.getenv('GROQ_API_KEY', None)
+        self.api['huggingface'] = os.getenv('HUGGINGFACE_API_KEY', None)
+        self.api['google'] = os.getenv('GEMINI_API_KEY', None)
+
+        # API key settings UI
+        self.widgets={}
+        for api in self.api.keys():
+            self.widgets[api] = pn.widgets.TextInput(name=api, value=self.api[api], sizing_mode='stretch_width')
+            self.widgets[api].param.watch(self.on_change, 'value')
+
+        self.api_column = pn.Column(name='API keys')
+        for widget in self.widgets.values():
+            self.api_column.append(widget)
+        self.API_accordion = pn.Accordion(self.api_column, sizing_mode='stretch_width', name='API Keys')
+
+    def on_change(self, event):
+        #if the user has changed the API key, update the environment and the API key dictionary
+        self.api[event.obj.name] = event.new
+        os.environ[event.obj.name] = event.new
+        
+    def get_UI_widget(self):
+        return self.API_accordion
+        
+    def get_settings(self):
+        return self.api
+        
+class LLMSettings:
+    def __init__(self, user=None):
+        self.widgets={}
+        self.widgets['provider'] = pn.widgets.Select(name="LLM provider", options=LLM.get_providers(), value='ollama')
+        self.widgets['provider'].param.watch(self.on_provider_change, 'value')
+        models = LLM.get_models(self.widgets['provider'].value)
+        self.widgets['models'] = pn.widgets.Select(name="LLM", options=models, value=models[0])
+        self.widgets['models'].param.watch(self.on_model_change, 'value')
+        self.widgets['baseurl'] = pn.widgets.TextInput(name='LLM base URL', value="http://localhost:11434", sizing_mode='stretch_width')
+        self.widgets['temperature'] = pn.widgets.FloatSlider(name='Temperature', start=0.0, end=1.0, step=0.01, value=0.3)
+        self.widgets['systemprompt'] = pn.widgets.TextAreaInput(name='System Prompt', 
+                                                                placeholder="""You will answer the question truthfully to the best of your abilities. If you don't know for sure, just say 'I don't know'""", 
+                                                                sizing_mode='stretch_width')
+        
+        self.LLM_accordion = pn.Accordion(sizing_mode='stretch_width', name='LLM Settings')
+        self.api_column = pn.Column(name='LLM Settings')
+        for widget in self.widgets.values():
+            self.api_column.append(widget)
+        self.LLM_accordion.append(self.api_column)
+
+    def on_provider_change(self, event):
+        provider = event.new
+        print(f"selected provider: {provider}")
+        models = LLM.get_models(provider)
+        self.widgets['models'].options = models
+        self.widgets['models'].value = models[0]
+
+    def on_model_change(self, event):
+        #the user has changed the model, update the relevant parameters
+        self.modelname = event.new
+        print(f"selected model: {self.modelname}")
+
+    def get_UI_widget(self):
+        return self.LLM_accordion
+       
+    def get_settings(self):
+        params={}
+        for key in self.widgets.keys():
+            params[key] = self.widgets[key].value
+        return params
+
+
+class EmbeddingSettings:
+    def __init__(self, user=None):
+        self.widgets={}
+        self.widgets['provider'] = pn.widgets.Select(name="Embedding provider", options=['openai', 'anthropic', 'groq',  'google',  'ollama'], value='ollama')
+        self.widgets['model'] = pn.widgets.TextInput(name='Embedding model', value="mxbai-embed-large", sizing_mode='stretch_width')
+        self.widgets['model'].param.watch(self.on_model_change, 'value')
+        self.widgets['provider'].param.watch(self.on_provider_change, 'value')
+        
+        self.embedding_column = pn.Column(name='Embedding Settings')
+        for widget in self.widgets.values():
+            self.embedding_column.append(widget)
+        self.embedding_accordion = pn.Accordion(self.embedding_column, sizing_mode='stretch_width', name='Embedding Settings')
+
+    def on_provider_change(self, event):
+        provider = event.new
+        print(f"selected provider: {provider}")
+
+    def on_model_change(self, event):
+        #the user has changed the model, update the relevant parameters
+        self.modelname = event.new
+        
+        
+    def get_UI_widget(self):
+        return self.embedding_accordion
+       
+    def get_settings(self):
+        pass
+
+currentApiKeySettings=APIKeySettings()
+currentLLMSettings=LLMSettings()
 
 async def get_response_async(contents):
     """
@@ -54,7 +161,7 @@ async def get_response_async(contents):
     notebook.active = 3  # debug tab
     try:
         # Set a timeout for the research coroutine
-        response = await asyncio.wait_for(research(contents), timeout=240)  # 4 minutes timeout
+        response = await asyncio.wait_for(research(contents), timeout=300)  # 5 minutes timeout
     except asyncio.TimeoutError:
         response = "The request timed out. Please try again."
     finally:
@@ -79,12 +186,17 @@ def get_response(contents, user, instance):
          return asyncio.run(get_response_async(contents))
     else:
         #just answer a simple question
-        modelname = f"ollama/{llm_setter.value}"
+        params = currentLLMSettings.get_settings()
+        #pprint(params)
+        provider = params['provider']
+        modelname = params['models']
+        temperature=params['temperature']
         print(f"model used:{modelname}")
         print(f"attempting to answer question using LLM: {modelname}")
-        response = LLM.answer_this(contents[1:].strip(), 
-                                   modelname=modelname,
-                                   temperature=setter_llm_temperature.value,)
+        response = LLM.llm_response(contents[1:].strip(), 
+                                    provider=provider,
+                                    modelname=modelname,
+                                    temperature=temperature,)
     return response
     
 
@@ -118,27 +230,8 @@ sys.stdout = terminal
 def on_llm_selected(event):
     print(f"selected LLM: {event.new}")
 
-# API key settings
-user_setter = pn.widgets.TextInput(name='User', placeholder='Enter your name here', sizing_mode='stretch_width')
-serper_api_setter = pn.widgets.TextInput(name='Serper API Key', placeholder='Enter your Serper API key here', sizing_mode='stretch_width')
-tavily_api_setter = pn.widgets.TextInput(name='Tavily API Key', placeholder='Enter your Tavily API key here', sizing_mode='stretch_width')
-openai_api_setter = pn.widgets.TextInput(name='OpenAI API Key', placeholder='Enter your OpenAI API key here', sizing_mode='stretch_width')
-groq_api_setter = pn.widgets.TextInput(name='Groq API Key', placeholder='Enter your Groq API key here', sizing_mode='stretch_width')
-huggingface_api_setter = pn.widgets.TextInput(name='Huggingface API Key', placeholder='Enter your Huggingface API key here', sizing_mode='stretch_width')
-google_api_setter = pn.widgets.TextInput(name='Google API Key', placeholder='Enter your Google API key here', sizing_mode='stretch_width')
-API_accordion=pn.Accordion(name='API keys', sizing_mode='stretch_width')
-API_accordion.append(pn.Column(user_setter, openai_api_setter, tavily_api_setter, name='API Keys'))
 
-#our local LLMs - user selectable
-llm_setter = pn.widgets.Select(name="LLM", options=[model['name'] for model in LLM.list_local_models()])
-llm_setter.param.watch(on_llm_selected, 'value')
-LLM_accordion = pn.Accordion(name='local LLMs', sizing_mode='stretch_width')
-LLM_accordion.append(llm_setter)
 
-setter_llm_temperature = pn.widgets.FloatSlider(name='Temperature', start=0.0, end=1.0, step=0.01, value=0.3)
-setter_llm_systemprompt = pn.widgets.TextAreaInput(name='System Prompt', placeholder='Enter your system prompt here', sizing_mode='stretch_width')
-llm_params = pn.Column(setter_llm_temperature, setter_llm_systemprompt, name='LLM Parameters')
-LLM_accordion.append(llm_params)
 
 setter_gptr_retriever = pn.widgets.Select(name="Retriever", options=['tavily', 'serper',  'google',  'searxing', 'duckduckgo'], value='tavily')
 setter_gptr_provider = pn.widgets.Select(name="LLM provider", options=list(AVAILABLE_CONFIGS.keys()), value='ollama')
@@ -162,7 +255,8 @@ setter_gptr_user_agent = pn.widgets.TextInput(name='User agent', value="Mozilla/
 setter_gptr_embedding_provider = pn.widgets.Select(name="Embedding provider", options=['openai', 'anthropic', 'groq',  'google',  'ollama'], value='ollama')    
 setter_gptr_embedding_model= pn.widgets.TextInput(name='Embedding model', value="mxbai-embed-large", sizing_mode='stretch_width')
 gptr_params = pn.Column(setter_gptr_retriever, setter_gptr_provider, setter_gptr_baseurl, setter_gptr_fastllm, setter_gptr_smartllm, setter_gptr_fast_token_limit, setter_gptr_smart_token_limit, setter_gptr_browse_chunk_max_length, setter_gptr_summary_token_limit, setter_gptr_temperature, setter_gptr_memory_backend, setter_gptr_total_words, setter_gptr_report_format, setter_gptr_max_iterations, setter_gptr_agent_role, setter_gptr_scraper, setter_gptr_max_subtopics, setter_gptr_max_search_results_per_query, setter_gptr_user_agent, setter_gptr_embedding_provider, setter_gptr_embedding_model, name='GPT Researcher Parameters')
-LLM_accordion.append(gptr_params)
+GPTR_accordion = pn.Accordion(sizing_mode='stretch_width', name='GPT Researcher Settings')
+GPTR_accordion.append(gptr_params)
 
 chat_bot = pn.chat.ChatInterface(callback=get_response,
                                  callback_exception='verbose', 
@@ -199,10 +293,13 @@ ps = PublicationStorage()
 publications_in_storage = ps.count_publications()
 
 # Instantiate the template with widgets displayed in the sidebar
+API_accordion = currentApiKeySettings.get_UI_widget()
+LLM_accordion = currentLLMSettings.get_UI_widget()
 template = pn.template.FastListTemplate(
     title=f"My Research Assistant - {publications_in_storage} publications archived locally",
     sidebar=[API_accordion,
-             LLM_accordion],
+             LLM_accordion,
+             GPTR_accordion]
 )
 
 # Append a layout to the main area, to demonstrate the list-like API
