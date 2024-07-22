@@ -174,8 +174,7 @@ async def research(query: str, report_type = "research_report", output_fname : s
     
     # Initialize the researcher QUERY_TEMPLATE.format(query=query)
     print("Initialising researcher")
-    researcher = GPTResearcher(query=query, report_type=report_type, config_path=None) #config_path="./config_local.json")
-    
+    researcher = GPTResearcher(query=query, report_type=report_type, config_path=None) 
     # Conduct research on the given query
     await researcher.conduct_research()
     
@@ -216,6 +215,8 @@ if __name__ == "__main__":
 
     # Conduct the research
     load_api_keys()
+    config=Anthropic_Config()
+    config.activate()
     report = asyncio.run(research(args.query, output_fname=args.output_fname))
 
 

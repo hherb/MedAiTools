@@ -63,7 +63,7 @@ class APIKeySettings:
     def on_change(self, event):
         #if the user has changed the API key, update the environment and the API key dictionary
         self.api[event.obj.name] = event.new
-        os.environ[event.obj.name] = event.new
+        os.environ[event.obj.name] = str(event.new)
         
     def get_UI_widget(self):
         return self.API_accordion
@@ -111,6 +111,8 @@ class LLMSettings:
         for key in self.widgets.keys():
             params[key] = self.widgets[key].value
         return params
+    
+
 
 
 class EmbeddingSettings:
@@ -141,10 +143,67 @@ class EmbeddingSettings:
     def get_settings(self):
         pass
 
+class ResearcherSettings:
+    def __init__(self):
+        self.widgets={}
+        self.widgets['RETRIEVER'] = pn.widgets.Select(name="Retriever", options=['tavily', 'serper',  'google',  'searxing', 'duckduckgo'], value='tavily')
+        self.widgets['BROWSE_CHUNK_MAX_LENGTH'] = pn.widgets.IntInput(name='Browse chunk max length', value=8192, sizing_mode='stretch_width')
+        self.widgets['SCRAPER'] = pn.widgets.TextInput(name='Scraper', value="bs", sizing_mode='stretch_width')
+        self.widgets['LLM_PROVIDER'] = pn.widgets.Select(name="LLM provider", options=list(AVAILABLE_CONFIGS.keys()), value='ollama')
+        self.widgets['LLM_PROVIDER'].param.watch(self.on_provider_change, 'value')
+        models = LLM.get_models(self.widgets['LLM_PROVIDER'].value)
+        self.widgets['OLLAMA_BASEURL'] = pn.widgets.TextInput(name='LLM base URL', value="http://localhost:11434", sizing_mode='stretch_width')
+        self.widgets['FAST_LLM_MODEL'] = pn.widgets.Select(name="Fast LLM", options=models, value=models[0], sizing_mode='stretch_width')
+        self.widgets['SMART_LLM_MODEL'] = pn.widgets.Select(name="Smart LLM", options=models, value=models[0], sizing_mode='stretch_width')
+        self.widgets['TEMPERATURE'] = pn.widgets.FloatSlider(name='Temperature', start=0.0, end=1.0, step=0.01, value=0.3)
+        self.widgets['FAST_TOKEN_LIMIT'] = pn.widgets.IntInput(name='Fast token limit', value=3000, sizing_mode='stretch_width')
+        self.widgets['SMART_TOKEN_LIMIT'] = pn.widgets.IntInput(name='Smart token limit', value=4000, sizing_mode='stretch_width')       
+        self.widgets['SUMMARY_TOKEN_LIMIT'] = pn.widgets.IntInput(name='Summary token limit', value=700, sizing_mode='stretch_width')    
+        self.widgets['EMBEDDING_PROVIDER'] = pn.widgets.Select(name="Embedding provider", options=['openai', 'anthropic', 'groq',  'google',  'ollama'], value='ollama')
+        self.widgets['EMBEDDING_MODEL'] = pn.widgets.TextInput(name='Embedding model', value="mxbai-embed-large", sizing_mode='stretch_width')
+        self.widgets['MEMORY_BACKEND'] = pn.widgets.Select(name="Memory backend", options=['local'], value='local')
+        self.widgets['TOTAL_WORDS'] = pn.widgets.IntInput(name='Total words', value=800, sizing_mode='stretch_width')
+        self.widgets['REPORT_FORMAT'] = pn.widgets.TextInput(name='Report format', value="APA", sizing_mode='stretch_width')
+        self.widgets['MAX_ITERATIONS'] = pn.widgets.IntInput(name='Max iterations', value=5, sizing_mode='stretch_width')
+        self.widgets['AGENT_ROLE'] = pn.widgets.TextInput(name='Agent role', value=None, sizing_mode='stretch_width')
+        self.widgets['MAX_SUBTOPICS'] = pn.widgets.IntInput(name='Max subtopics', value=3, sizing_mode='stretch_width')
+        self.widgets['MAX_SEARCH_RESULTS_PER_QUERY'] = pn.widgets.IntInput(name='Max search results per query', value=10, sizing_mode='stretch_width')
+        self.widgets['USER_AGENT'] = pn.widgets.TextInput(name='User agent', value="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/", sizing_mode='stretch_width')
+        self.accordion = pn.Accordion(sizing_mode='stretch_width', name='Research Agent Settings')
+        self.parameter_column = pn.Column(name='Researcher Settings')
+        for widget in self.widgets.values():
+            self.parameter_column.append(widget)
+        self.accordion.append(self.parameter_column)
+
+    def on_provider_change(self, event):
+        provider = event.new
+        print(f"selected provider for researcher: {provider}")
+        models = LLM.get_models(provider)
+        self.widgets['SMART_LLM_MODEL'].options = models
+        self.widgets['SMART_LLM_MODEL'].value = models[0]
+        self.widgets['FAST_LLM_MODEL'].options = models
+        self.widgets['FAST_LLM_MODEL'].value = models[0]
+
+
+    def get_UI_widget(self):
+        return self.accordion
+       
+    def get_settings(self):
+        params={}
+        for key in self.widgets.keys():
+            params[key] = self.widgets[key].value
+        return params
+    
+    def activate(self):
+        for key in self.widgets.keys():
+            os.environ[key] = str(self.widgets[key].value)
+
 currentApiKeySettings=APIKeySettings()
 currentLLMSettings=LLMSettings()
+currentEmbeddingSettings=EmbeddingSettings()
+currenttResearcherSettings=ResearcherSettings()
 
-async def get_response_async(contents):
+async def get_response_async(contents, timeout=300):
     """
     Async function to get the AI agent's response.
     This function takes in some contents as input and then waits for
@@ -161,7 +220,7 @@ async def get_response_async(contents):
     notebook.active = 3  # debug tab
     try:
         # Set a timeout for the research coroutine
-        response = await asyncio.wait_for(research(contents), timeout=300)  # 5 minutes timeout
+        response = await asyncio.wait_for(research(contents), timeout=timeout)  
     except asyncio.TimeoutError:
         response = "The request timed out. Please try again."
     finally:
@@ -183,7 +242,8 @@ def get_response(contents, user, instance):
     """
     if contents.startswith('@'):
         #do a full research
-         return asyncio.run(get_response_async(contents))
+        currenttResearcherSettings.activate()
+        return asyncio.run(get_response_async(contents))
     else:
         #just answer a simple question
         params = currentLLMSettings.get_settings()
@@ -233,31 +293,6 @@ def on_llm_selected(event):
 
 
 
-setter_gptr_retriever = pn.widgets.Select(name="Retriever", options=['tavily', 'serper',  'google',  'searxing', 'duckduckgo'], value='tavily')
-setter_gptr_provider = pn.widgets.Select(name="LLM provider", options=list(AVAILABLE_CONFIGS.keys()), value='ollama')
-setter_gptr_baseurl = pn.widgets.TextInput(name='LLM base URL', value="http://localhost:11434", sizing_mode='stretch_width')
-setter_gptr_fastllm = pn.widgets.TextInput(name='Fast LLM model', value="llama3-groq-tool-use:8b-q8_0", sizing_mode='stretch_width')
-setter_gptr_smartllm = pn.widgets.TextInput(name='Smart LLM model', value="nous-hermes2:34b-yi-q8_0", sizing_mode='stretch_width')
-setter_gptr_fast_token_limit = pn.widgets.IntInput(name='Fast token limit', value=3000, sizing_mode='stretch_width')
-setter_gptr_smart_token_limit = pn.widgets.IntInput(name='Smart token limit', value=4000, sizing_mode='stretch_width')
-setter_gptr_browse_chunk_max_length = pn.widgets.IntInput(name='Browse chunk max length', value=8192, sizing_mode='stretch_width')
-setter_gptr_summary_token_limit = pn.widgets.IntInput(name='Summary token limit', value=700, sizing_mode='stretch_width')
-setter_gptr_temperature = pn.widgets.FloatSlider(name='Temperature', start=0.0, end=1.0, step=0.01, value=0.3)
-setter_gptr_memory_backend= pn.widgets.Select(name="Memory backend", options=['local', 'remote'], value='local')
-setter_gptr_total_words = pn.widgets.IntInput(name='Total words', value=800, sizing_mode='stretch_width')
-setter_gptr_report_format = pn.widgets.TextInput(name='Report format', value="APA", sizing_mode='stretch_width')
-setter_gptr_max_iterations = pn.widgets.IntInput(name='Max iterations', value=5, sizing_mode='stretch_width')
-setter_gptr_agent_role = pn.widgets.TextInput(name='Agent role', value=None, sizing_mode='stretch_width')
-setter_gptr_scraper = pn.widgets.TextInput(name='Scraper', value="bs", sizing_mode='stretch_width')
-setter_gptr_max_subtopics = pn.widgets.IntInput(name='Max subtopics', value=3, sizing_mode='stretch_width')
-setter_gptr_max_search_results_per_query = pn.widgets.IntInput(name='Max search results per query', value=10, sizing_mode='stretch_width')
-setter_gptr_user_agent = pn.widgets.TextInput(name='User agent', value="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/")
-setter_gptr_embedding_provider = pn.widgets.Select(name="Embedding provider", options=['openai', 'anthropic', 'groq',  'google',  'ollama'], value='ollama')    
-setter_gptr_embedding_model= pn.widgets.TextInput(name='Embedding model', value="mxbai-embed-large", sizing_mode='stretch_width')
-gptr_params = pn.Column(setter_gptr_retriever, setter_gptr_provider, setter_gptr_baseurl, setter_gptr_fastllm, setter_gptr_smartllm, setter_gptr_fast_token_limit, setter_gptr_smart_token_limit, setter_gptr_browse_chunk_max_length, setter_gptr_summary_token_limit, setter_gptr_temperature, setter_gptr_memory_backend, setter_gptr_total_words, setter_gptr_report_format, setter_gptr_max_iterations, setter_gptr_agent_role, setter_gptr_scraper, setter_gptr_max_subtopics, setter_gptr_max_search_results_per_query, setter_gptr_user_agent, setter_gptr_embedding_provider, setter_gptr_embedding_model, name='GPT Researcher Parameters')
-GPTR_accordion = pn.Accordion(sizing_mode='stretch_width', name='GPT Researcher Settings')
-GPTR_accordion.append(gptr_params)
-
 chat_bot = pn.chat.ChatInterface(callback=get_response,
                                  callback_exception='verbose', 
                                  user='Horst', 
@@ -295,11 +330,12 @@ publications_in_storage = ps.count_publications()
 # Instantiate the template with widgets displayed in the sidebar
 API_accordion = currentApiKeySettings.get_UI_widget()
 LLM_accordion = currentLLMSettings.get_UI_widget()
+Researcher_accordion = currenttResearcherSettings.get_UI_widget()
 template = pn.template.FastListTemplate(
     title=f"My Research Assistant - {publications_in_storage} publications archived locally",
     sidebar=[API_accordion,
              LLM_accordion,
-             GPTR_accordion]
+             Researcher_accordion]
 )
 
 # Append a layout to the main area, to demonstrate the list-like API
