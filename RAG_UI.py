@@ -2,6 +2,11 @@ import panel as pn
 from panel.chat import ChatInterface
 from RAG import RAG
 import os, os.path
+from functools import partial
+from EventDispatcher import EventDispatcher
+
+
+
 
 pn.extension('texteditor', notifications=True, loading_indicator=True, design="material")
 
@@ -15,6 +20,10 @@ class PDFPanel(pn.viewable.Viewer):
         self.displayed_pdf=None #the currently displayed pdf file
         self.RAG=RAG()
         self.setup_panels()
+        #our global event handling system - we use it to communicate events between modules
+        print("creating PDFPanel & registering event dispatcher)")
+        self.eventdispatcher = EventDispatcher()
+        self.eventdispatcher.register_listener("LLM_MODEL_CHANGED", self.on_llm_model_changed)
 
     def __panel__(self):
         return self.panel
@@ -30,7 +39,7 @@ class PDFPanel(pn.viewable.Viewer):
         self.file_input.param.watch(self.update_pdf, 'value') 
         self.check_all_documents=pn.widgets.Checkbox(name="Interrogate all documents", value=False)
 
-        self.pdf_panel=pn.Column(self.pdf_pane, pn.Row(self.file_input, self.check_all_documents), margin=10, sizing_mode='stretch_both' )
+        self.pdf_panel=pn.Column(self.pdf_pane, pn.Row(self.file_input, self.check_all_documents), margin=10, sizing_mode='stretch_both')
         
         self.chat_bot = pn.chat.ChatInterface(callback=self.response, 
                                  user='Me', 
@@ -61,7 +70,19 @@ class PDFPanel(pn.viewable.Viewer):
             #"""set the PDF viewer to display the uploaded file""" 
             self.set_pdf(filepath)  
 
-                
+    def on_llm_model_changed(self, event, *args, **kwargs):
+        print(f"LLM model for RAG system changed to: {event['settings']}")
+        self.set_LLM(provider=event['settings']['provider'], model=event['settings']['models'], temperature=event['settings']['temperature'])
+
+    def set_LLM(self, provider='ollama', model='phi3:14b-medium-128k-instruct-q5_K_M', temperature=0.3):
+        """
+        Set the LLM model to be used by the RAG
+        Args:
+            provider (str): The provider of the LLM model
+            model (str): The model to use
+            temperature (float): The temperature to use
+        """
+        self.RAG.set_llm(provider=provider, model=model, temperature=temperature)
 
     def response(self, contents, user, instance):
         """

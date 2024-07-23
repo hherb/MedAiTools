@@ -19,6 +19,7 @@ from panel.widgets import Tqdm
 from time import sleep
 import asyncio
 import sys
+import json
 
 from Researcher import research, AVAILABLE_CONFIGS
 from MedrXivPanel import MedrXivPanel 
@@ -28,6 +29,16 @@ from medai.Settings import Settings
 from PersistentStorage import PublicationStorage
 #from EventDispatcher import EventDispatcher
 from medai import LLM   
+from EventDispatcher import EventDispatcher
+
+
+def on_llm_model_changed(event):
+    print(f"LLM model changed to: {event['settings']}")
+
+#our global event handling system - we use it to send events to other modules
+eventdispatcher = EventDispatcher()
+eventdispatcher.register_listener('LLM_MODEL_CHANGED', on_llm_model_changed)
+
 
 pn.extension('texteditor', loading_indicator=True, design="material")
 
@@ -64,6 +75,7 @@ class APIKeySettings:
         #if the user has changed the API key, update the environment and the API key dictionary
         self.api[event.obj.name] = event.new
         os.environ[event.obj.name] = str(event.new)
+        eventdispatcher.dispatch_event('API_KEY_CHANGED', {'api':event.obj.name, 'key':event.new})
         
     def get_UI_widget(self):
         return self.API_accordion
@@ -101,7 +113,7 @@ class LLMSettings:
     def on_model_change(self, event):
         #the user has changed the model, update the relevant parameters
         self.modelname = event.new
-        print(f"selected model: {self.modelname}")
+        eventdispatcher.dispatch_event('LLM_MODEL_CHANGED', {'settings':self.get_settings()})
 
     def get_UI_widget(self):
         return self.LLM_accordion
@@ -146,10 +158,9 @@ class EmbeddingSettings:
 class ResearcherSettings:
     def __init__(self):
         self.widgets={}
-        self.widgets['RETRIEVER'] = pn.widgets.Select(name="Retriever", options=['tavily', 'serper',  'google',  'searxing', 'duckduckgo'], value='tavily')
-        self.widgets['BROWSE_CHUNK_MAX_LENGTH'] = pn.widgets.IntInput(name='Browse chunk max length', value=8192, sizing_mode='stretch_width')
-        self.widgets['SCRAPER'] = pn.widgets.TextInput(name='Scraper', value="bs", sizing_mode='stretch_width')
+        
         self.widgets['LLM_PROVIDER'] = pn.widgets.Select(name="LLM provider", options=list(AVAILABLE_CONFIGS.keys()), value='ollama')
+        #if the provider changes, the model list has to be updated accordingly
         self.widgets['LLM_PROVIDER'].param.watch(self.on_provider_change, 'value')
         models = LLM.get_models(self.widgets['LLM_PROVIDER'].value)
         self.widgets['OLLAMA_BASEURL'] = pn.widgets.TextInput(name='LLM base URL', value="http://localhost:11434", sizing_mode='stretch_width')
@@ -158,7 +169,10 @@ class ResearcherSettings:
         self.widgets['TEMPERATURE'] = pn.widgets.FloatSlider(name='Temperature', start=0.0, end=1.0, step=0.01, value=0.3)
         self.widgets['FAST_TOKEN_LIMIT'] = pn.widgets.IntInput(name='Fast token limit', value=3000, sizing_mode='stretch_width')
         self.widgets['SMART_TOKEN_LIMIT'] = pn.widgets.IntInput(name='Smart token limit', value=4000, sizing_mode='stretch_width')       
-        self.widgets['SUMMARY_TOKEN_LIMIT'] = pn.widgets.IntInput(name='Summary token limit', value=700, sizing_mode='stretch_width')    
+        self.widgets['SUMMARY_TOKEN_LIMIT'] = pn.widgets.IntInput(name='Summary token limit', value=700, sizing_mode='stretch_width')  
+        self.widgets['RETRIEVER'] = pn.widgets.Select(name="Retriever", options=['tavily', 'serper', 'serpapi', 'google',  'searx', 'duckduckgo'], value='tavily')
+        self.widgets['BROWSE_CHUNK_MAX_LENGTH'] = pn.widgets.IntInput(name='Browse chunk max length', value=8192, sizing_mode='stretch_width')
+        self.widgets['SCRAPER'] = pn.widgets.TextInput(name='Scraper', value="bs", sizing_mode='stretch_width')  
         self.widgets['EMBEDDING_PROVIDER'] = pn.widgets.Select(name="Embedding provider", options=['openai', 'anthropic', 'groq',  'google',  'ollama'], value='ollama')
         self.widgets['EMBEDDING_MODEL'] = pn.widgets.TextInput(name='Embedding model', value="mxbai-embed-large", sizing_mode='stretch_width')
         self.widgets['MEMORY_BACKEND'] = pn.widgets.Select(name="Memory backend", options=['local'], value='local')
@@ -173,7 +187,11 @@ class ResearcherSettings:
         self.parameter_column = pn.Column(name='Researcher Settings')
         for widget in self.widgets.values():
             self.parameter_column.append(widget)
+        self.save_settings_button = pn.widgets.Button(name='Save', button_type="primary", sizing_mode='stretch_width')
+        self.save_settings_button.on_click(self._save_settings)
+        self.parameter_column.append(self.save_settings_button)
         self.accordion.append(self.parameter_column)
+        self._load_settings()
 
     def on_provider_change(self, event):
         provider = event.new
@@ -184,11 +202,30 @@ class ResearcherSettings:
         self.widgets['FAST_LLM_MODEL'].options = models
         self.widgets['FAST_LLM_MODEL'].value = models[0]
 
+    def _save_settings(self, event):
+        print("save settings")  
+        settings = self._get_settings()
+        with open('./researcher_settings.json', 'w') as f:
+            json.dump(settings, f)
+
+    def _set_settings(self, settings):
+        for key in settings.keys():
+            self.widgets[key].value = settings[key]
+
+    def _load_settings(self):
+        try:
+            with open('./researcher_settings.json', 'r') as f:
+                settings = json.load(f)
+                self._set_settings(settings)
+                print("loaded settings")
+        except:
+                print("no saved settings found for researcher")
+
 
     def get_UI_widget(self):
         return self.accordion
        
-    def get_settings(self):
+    def _get_settings(self):
         params={}
         for key in self.widgets.keys():
             params[key] = self.widgets[key].value

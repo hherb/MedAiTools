@@ -1,5 +1,5 @@
 
-event_names=('DISPLAY_PDF_FILE',)
+event_names=('DISPLAY_PDF_FILE', 'API_KEY_CHANGED', 'LLM_MODEL_CHANGED')
 
 class SingletonMeta(type):
     _instances = {}

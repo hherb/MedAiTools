@@ -41,7 +41,7 @@ def get_models(provider='ollama'):
     if provider=='huggingface':
         return(['enter manually'])
     if provider=='groq':
-        return(['mixtral-8x7b-32768', 'llama3-70b-8192', 'llama3-8b-8192', 'llama2-70b-4096', 'gemma-7b-it'])
+        return(['mixtral-8x7b-32768', 'llama3-70b-8192', 'Llama3-groq-70B-8192-tool-use', 'llama3-8b-8192', 'Llama3-groq-8B-8192-tool-use', 'Gemma2-9b-it'])
     if provider=='anthropic':
         return(litellm.anthropic_models)
     if provider=='openai':

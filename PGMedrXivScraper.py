@@ -153,6 +153,10 @@ class MedrXivScraper:
         """
         pdf_url = self.get_pdf_url(publication)
         pdf_name = f"{publication['doi'].replace('/', '-')}.pdf"
+        try:
+            path = s.get('PUBLICATION_DIR', path)
+        except:
+            pass
         pdf_path = os.path.join(path, pdf_name)
 
         # Check if the PDF file already exists - only download once
@@ -526,7 +530,7 @@ class MedrXivAssistant:
       
 if __name__=="__main__":
     scraper = MedrXivScraper()
-    #scraper.fetch_latest_publications(start_date="2024-06-01", fetch_pdfs=False)
+    scraper.fetch_latest_publications(fetch_pdfs=True)
     #scraper.fetch_all_missing_pdfs()
     scraper.update_summaries()
     #assistant = MedrXivAssistant()

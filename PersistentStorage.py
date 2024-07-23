@@ -43,6 +43,8 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
 )
 
+from llama_index.llms.litellm import LiteLLM
+
 from llama_index.vector_stores.postgres import PGVectorStore
 #from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 #from langchain.embeddings.huggingface import HuggingFaceBgeEmbeddings
@@ -303,7 +305,7 @@ class PublicationStorage(PersistentStorage):
         self.llamaindex_settings.enable_sparse = True
 
         #self.llm = medai.LLM.LLM(medai.LLM.get_local_32k_model())
-        from llama_index.llms.litellm import LiteLLM
+        
         self.llm = LiteLLM(model=s.LOCAL_DEFAULT_MODEL,
                             api_key=s.LOCAL_LLM_API_KEY,
                             api_base=s.LOCAL_LLM_API_BASE)
@@ -327,7 +329,21 @@ class PublicationStorage(PersistentStorage):
             #TODO: create vector store and index if not existing yet
 
 
-
+    def set_LLM(self, provider='ollama', model=s.LOCAL_DEFAULT_MODEL, api_base=s.LOCAL_LLM_API_BASE, api_key=s.LOCAL_LLM_API_KEY, temperature=0.3):
+        if provider in ['ollama', 'huggingface', 'groq']:
+            model = f"{provider}/{model}"
+        if provider in ['ollama', 'huggingface']:
+            self.llm = LiteLLM(model=model,
+                            api_key=api_key,
+                            api_base=api_base,
+                            temperature=temperature,
+                            )
+        else:
+            self.llm = LiteLLM(model=model,
+                            temperature=temperature,
+                            )
+            
+        self.llamaindex_settings.llm = self.llm
 
     def ingest_pdf(self, pdfpath, force=False) -> str:
         """

@@ -26,6 +26,13 @@ class RAG:
         """
         self.last_ingested = self.db.ingest_pdf(pdfpath, force=force)
 
+    def set_llm(self, provider='ollama', model='phi3:14b-medium-128k-instruct-q5_K_M', temperature=0.3):
+        """
+        Set the LLM model to be used by the RAG
+        :llm (LLM): The LLM model to use
+        """
+        self.db.set_LLM(provider=provider, model=model, temperature=temperature)
+
     def query(self, question, pdfpath=None, top_k=5):
         """Query the RAG
         Args:
