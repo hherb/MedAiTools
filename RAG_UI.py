@@ -72,7 +72,10 @@ class PDFPanel(pn.viewable.Viewer):
 
     def on_llm_model_changed(self, event, *args, **kwargs):
         print(f"LLM model for RAG system changed to: {event['settings']}")
-        self.set_LLM(provider=event['settings']['provider'], model=event['settings']['models'], temperature=event['settings']['temperature'])
+        model=event['settings']['models']
+        temperature=event['settings']['temperature']
+        self.set_LLM(provider=event['settings']['provider'], model=model, temperature=temperature)
+        self.chat_bot.send(f"I am going to answer your questions using LLM {model} with temperature={temperature}", user="Assistant", respond=False)
 
     def set_LLM(self, provider='ollama', model='phi3:14b-medium-128k-instruct-q5_K_M', temperature=0.3):
         """

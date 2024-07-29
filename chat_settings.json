@@ -1,0 +1,1 @@
+{"provider": "ollama", "models": "mistral-nemo:12b-instruct-2407-fp16", "baseurl": "http://localhost:11434", "temperature": 0.3, "systemprompt": null}

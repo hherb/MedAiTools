@@ -85,22 +85,64 @@ class APIKeySettings:
         
 class LLMSettings:
     def __init__(self, user=None):
+        print("trying to load LLM chat settings")
+        self.settings = self.load_settings()
+        if not self.settings:
+            print("could not load LLM chat settings, using defaults")
+            self.settings=self.default_settings()
         self.widgets={}
-        self.widgets['provider'] = pn.widgets.Select(name="LLM provider", options=LLM.get_providers(), value='ollama')
+        self.init_gui(self.settings)
+
+    def set_settings(self, settings=None):
+        self.widgets={}
+        if not settings:
+            try:
+                print('loading LLM settings for chat ..."')
+                self.settings = self.load_settings()
+                if not self.settings:
+                    self.settings=self.default_settings
+            except:
+                print('failed to load settings for LLM chat, using defaults')
+                settings = self.default_settings()
+        else:
+            self.settings = settings
+        return self.settings
+
+
+    def default_settings(self):
+        settings={}
+        settings['provider']='ollama'
+        settings['baseurl']= 'http://localhost:11434'
+        settings['temperature'] = 0.3
+        settings['systemprompt'] = None
+        settings['models']=None
+        return settings
+    
+    def init_gui(self, settings):
+        self.widgets['provider'] = pn.widgets.Select(name="LLM provider", options=LLM.get_providers(), value=settings['provider'])
         self.widgets['provider'].param.watch(self.on_provider_change, 'value')
         models = LLM.get_models(self.widgets['provider'].value)
-        self.widgets['models'] = pn.widgets.Select(name="LLM", options=models, value=models[0])
+        try:
+            model=settings['models']
+        except:
+            model=models[0]
+        self.widgets['models'] = pn.widgets.Select(name="LLM", options=models, value=model)
         self.widgets['models'].param.watch(self.on_model_change, 'value')
-        self.widgets['baseurl'] = pn.widgets.TextInput(name='LLM base URL', value="http://localhost:11434", sizing_mode='stretch_width')
-        self.widgets['temperature'] = pn.widgets.FloatSlider(name='Temperature', start=0.0, end=1.0, step=0.01, value=0.3)
+        self.widgets['baseurl'] = pn.widgets.TextInput(name='LLM base URL', value=settings['baseurl'], sizing_mode='stretch_width')
+        self.widgets['temperature'] = pn.widgets.FloatSlider(name='Temperature', start=0.0, end=1.0, step=0.01, value=settings['temperature'],sizing_mode='stretch_width' )
         self.widgets['systemprompt'] = pn.widgets.TextAreaInput(name='System Prompt', 
                                                                 placeholder="""You will answer the question truthfully to the best of your abilities. If you don't know for sure, just say 'I don't know'""", 
+                                                                value=settings['systemprompt'],
                                                                 sizing_mode='stretch_width')
         
         self.LLM_accordion = pn.Accordion(sizing_mode='stretch_width', name='LLM Settings')
         self.api_column = pn.Column(name='LLM Settings')
         for widget in self.widgets.values():
             self.api_column.append(widget)
+        self.save_settings_button = pn.widgets.Button(name='Save', button_type="primary", sizing_mode='stretch_width')
+        self.save_settings_button.on_click(self.save_settings)
+        self.api_column.append(self.save_settings_button)
+        
         self.LLM_accordion.append(self.api_column)
 
     def on_provider_change(self, event):
@@ -124,6 +166,22 @@ class LLMSettings:
             params[key] = self.widgets[key].value
         return params
     
+    def save_settings(self, event):
+        print("save settings")  
+        settings = self.get_settings()
+        with open('./chat_settings.json', 'w') as f:
+            json.dump(settings, f)
+
+    def load_settings(self):
+        try:
+            with open('./chat_settings.json', 'r') as f:
+                settings = json.load(f)
+                #self.set_settings(settings)
+                print("loaded settings")
+                return settings
+        except:
+            print("no saved LLM settings found for chat")
+            return None
 
 
 
@@ -163,7 +221,7 @@ class ResearcherSettings:
         #if the provider changes, the model list has to be updated accordingly
         self.widgets['LLM_PROVIDER'].param.watch(self.on_provider_change, 'value')
         models = LLM.get_models(self.widgets['LLM_PROVIDER'].value)
-        self.widgets['OLLAMA_BASEURL'] = pn.widgets.TextInput(name='LLM base URL', value="http://localhost:11434", sizing_mode='stretch_width')
+        self.widgets['OLLAMA_BASE_URL'] = pn.widgets.TextInput(name='LLM base URL', value="http://localhost:11434", sizing_mode='stretch_width')
         self.widgets['FAST_LLM_MODEL'] = pn.widgets.Select(name="Fast LLM", options=models, value=models[0], sizing_mode='stretch_width')
         self.widgets['SMART_LLM_MODEL'] = pn.widgets.Select(name="Smart LLM", options=models, value=models[0], sizing_mode='stretch_width')
         self.widgets['TEMPERATURE'] = pn.widgets.FloatSlider(name='Temperature', start=0.0, end=1.0, step=0.01, value=0.3)
@@ -175,6 +233,7 @@ class ResearcherSettings:
         self.widgets['SCRAPER'] = pn.widgets.TextInput(name='Scraper', value="bs", sizing_mode='stretch_width')  
         self.widgets['EMBEDDING_PROVIDER'] = pn.widgets.Select(name="Embedding provider", options=['openai', 'anthropic', 'groq',  'google',  'ollama'], value='ollama')
         self.widgets['EMBEDDING_MODEL'] = pn.widgets.TextInput(name='Embedding model', value="mxbai-embed-large", sizing_mode='stretch_width')
+        self.widgets['OLLAMA_EMBEDDING_MODEL'] = pn.widgets.TextInput(name='Ollama embedding model', value="mxbai-embed-large", sizing_mode='stretch_width')
         self.widgets['MEMORY_BACKEND'] = pn.widgets.Select(name="Memory backend", options=['local'], value='local')
         self.widgets['TOTAL_WORDS'] = pn.widgets.IntInput(name='Total words', value=800, sizing_mode='stretch_width')
         self.widgets['REPORT_FORMAT'] = pn.widgets.TextInput(name='Report format', value="APA", sizing_mode='stretch_width')
@@ -188,10 +247,10 @@ class ResearcherSettings:
         for widget in self.widgets.values():
             self.parameter_column.append(widget)
         self.save_settings_button = pn.widgets.Button(name='Save', button_type="primary", sizing_mode='stretch_width')
-        self.save_settings_button.on_click(self._save_settings)
+        self.save_settings_button.on_click(self.save_settings)
         self.parameter_column.append(self.save_settings_button)
         self.accordion.append(self.parameter_column)
-        self._load_settings()
+        self.load_settings()
 
     def on_provider_change(self, event):
         provider = event.new
@@ -202,22 +261,23 @@ class ResearcherSettings:
         self.widgets['FAST_LLM_MODEL'].options = models
         self.widgets['FAST_LLM_MODEL'].value = models[0]
 
-    def _save_settings(self, event):
+    def save_settings(self, event):
         print("save settings")  
-        settings = self._get_settings()
+        settings = self.get_settings()
         with open('./researcher_settings.json', 'w') as f:
             json.dump(settings, f)
 
-    def _set_settings(self, settings):
+    def set_settings(self, settings):
         for key in settings.keys():
             self.widgets[key].value = settings[key]
 
-    def _load_settings(self):
+    def load_settings(self):
         try:
             with open('./researcher_settings.json', 'r') as f:
                 settings = json.load(f)
-                self._set_settings(settings)
+                self.set_settings(settings)
                 print("loaded settings")
+                self.activate()
         except:
                 print("no saved settings found for researcher")
 
@@ -225,7 +285,7 @@ class ResearcherSettings:
     def get_UI_widget(self):
         return self.accordion
        
-    def _get_settings(self):
+    def get_settings(self):
         params={}
         for key in self.widgets.keys():
             params[key] = self.widgets[key].value
@@ -238,9 +298,9 @@ class ResearcherSettings:
 currentApiKeySettings=APIKeySettings()
 currentLLMSettings=LLMSettings()
 currentEmbeddingSettings=EmbeddingSettings()
-currenttResearcherSettings=ResearcherSettings()
+currentResearcherSettings=ResearcherSettings()
 
-async def get_response_async(contents, timeout=300):
+async def get_response_async(contents, timeout=500, research_params=None):
     """
     Async function to get the AI agent's response.
     This function takes in some contents as input and then waits for
@@ -257,7 +317,7 @@ async def get_response_async(contents, timeout=300):
     notebook.active = 3  # debug tab
     try:
         # Set a timeout for the research coroutine
-        response = await asyncio.wait_for(research(contents), timeout=timeout)  
+        response = await asyncio.wait_for(research(contents, research_params=research_params), timeout=timeout)  
     except asyncio.TimeoutError:
         response = "The request timed out. Please try again."
     finally:
@@ -279,22 +339,30 @@ def get_response(contents, user, instance):
     """
     if contents.startswith('@'):
         #do a full research
-        currenttResearcherSettings.activate()
-        return asyncio.run(get_response_async(contents))
+        currentResearcherSettings.activate()
+        params=currentResearcherSettings.get_settings()
+        fastmodel = params['FAST_LLM_MODEL']
+        smartmodel = params['SMART_LLM_MODEL']
+        temperature = params['TEMPERATURE']
+        print(f"attempting to research qeustion using fast LLM: {fastmodel}, smart LLM {smartmodel} with temperature {temperature}")
+        return asyncio.run(get_response_async(contents, research_params=params))
     else:
         #just answer a simple question
         params = currentLLMSettings.get_settings()
-        #pprint(params)
         provider = params['provider']
         modelname = params['models']
-        temperature=params['temperature']
+        temperature = params['temperature']
         print(f"model used:{modelname}")
-        print(f"attempting to answer question using LLM: {modelname}")
+        
         response = LLM.llm_response(contents[1:].strip(), 
                                     provider=provider,
                                     modelname=modelname,
                                     temperature=temperature,)
-    return response
+        # instance.send(f"question answered by LLM {modelname} (temp={temperature}) :", 
+        #               respond=False, 
+        #               user=f"LLM {modelname} (temp={temperature})",
+        #               avatar="🤖")
+    return f"** question answered by LLM {provider}/{modelname} (temp={temperature}) :\n" + response
     
 
 
@@ -367,7 +435,7 @@ publications_in_storage = ps.count_publications()
 # Instantiate the template with widgets displayed in the sidebar
 API_accordion = currentApiKeySettings.get_UI_widget()
 LLM_accordion = currentLLMSettings.get_UI_widget()
-Researcher_accordion = currenttResearcherSettings.get_UI_widget()
+Researcher_accordion = currentResearcherSettings.get_UI_widget()
 template = pn.template.FastListTemplate(
     title=f"My Research Assistant - {publications_in_storage} publications archived locally",
     sidebar=[API_accordion,

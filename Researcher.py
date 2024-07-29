@@ -165,7 +165,7 @@ AVAILABLE_CONFIGS={'openai':OpenAI_Config,
                    'huggingface':Huggingface_Config, 
                    'google':Google_Config}
 
-async def research(query: str, report_type = "research_report", output_fname : str = None, output_path : str = './reports') -> str: 
+async def research(query: str, report_type = "research_report", output_fname : str = None, output_path : str = './reports', research_params=None) -> str: 
     """Conduct research on the given query and write a report on it. 
        The report is returned as a string. 
        If output_fname is provided, the report is written to that file."""
@@ -184,19 +184,29 @@ async def research(query: str, report_type = "research_report", output_fname : s
 
     report = await researcher.write_report()
 
-    if output_fname is not None:
+    if output_fname:
         fname=output_fname
     else:
         #default: take the first line of the report (the title) as the filename, after removing the leading '# '
         # This line of code is extracting the title of the report from the generated report string and
         # using it to create a filename for the report. 
         fname= report.split('\n', 1)[0].replace('#', '').strip().replace(' ', '_').lower() + '.md'
+        
     fname = os.path.join(output_path, fname)
+    # Check if the file exists and append a number if it does
+    base, ext = os.path.splitext(fname)
+    counter = 1
+    while os.path.exists(fname):
+        fname = f"{base}_{counter}{ext}"
+        counter += 1
     try:
         with open(fname, 'w') as f:
             f.write(report)
+            if research_params:
+                with open(fname + '_params.json', 'w') as pf:
+                    pf.write(json.dumps(research_params))
     except Exception as e:
-        print(f"Error writing report to file: {e}")
+        print(f"An error occurred while writing the report: {e}")
    
     return report
 
