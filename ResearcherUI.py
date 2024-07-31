@@ -25,12 +25,13 @@ from Researcher import research, AVAILABLE_CONFIGS
 from MedrXivPanel import MedrXivPanel 
 from RAG_UI import PDFPanel
 from medai.tools.apikeys import load_api_keys  
-from medai.Settings import Settings
+from medai.Settings import Settings, Logger
 from PersistentStorage import PublicationStorage
 #from EventDispatcher import EventDispatcher
 from medai import LLM   
 from EventDispatcher import EventDispatcher
 
+logger = Logger()
 
 def on_llm_model_changed(event):
     print(f"LLM model changed to: {event['settings']}")
@@ -344,16 +345,16 @@ def get_response(contents, user, instance):
         fastmodel = params['FAST_LLM_MODEL']
         smartmodel = params['SMART_LLM_MODEL']
         temperature = params['TEMPERATURE']
-        print(f"attempting to research qeustion using fast LLM: {fastmodel}, smart LLM {smartmodel} with temperature {temperature}")
-        return asyncio.run(get_response_async(contents, research_params=params))
+        #print(f"attempting to research question using fast LLM: {fastmodel}, smart LLM {smartmodel} with temperature {temperature}")
+        answer = asyncio.run(get_response_async(contents[1:], research_params=params))
+        logger.log(f"\n{'='*50}\n{json.dumps(params)}\nQUESTION: {contents[1:]}\n {answer}")
     else:
         #just answer a simple question
         params = currentLLMSettings.get_settings()
         provider = params['provider']
         modelname = params['models']
         temperature = params['temperature']
-        print(f"model used:{modelname}")
-        
+        logger.log(f"## Question: {contents}")        
         response = LLM.llm_response(contents[1:].strip(), 
                                     provider=provider,
                                     modelname=modelname,
@@ -362,7 +363,9 @@ def get_response(contents, user, instance):
         #               respond=False, 
         #               user=f"LLM {modelname} (temp={temperature})",
         #               avatar="🤖")
-    return f"** question answered by LLM {provider}/{modelname} (temp={temperature}) :\n" + response
+        answer = f"<span style='color:blue'><sup>question answered by LLM {provider}/{modelname} (temp={temperature}) :</sup></span>\n" + response
+        logger.log(answer)
+    return answer
     
 
 

@@ -18,6 +18,7 @@ import json
 import os
 import threading
 import logging
+from datetime import datetime
 
 class SingletonMeta(type):
     _instances = {}
@@ -43,6 +44,17 @@ class SharedMemory(metaclass=SingletonMeta):
 
     def clear(self):
         self.shared_memory = {}
+
+class Logger(metaclass=SingletonMeta):
+    def __init__(self, logfilepath : str = None) -> None:
+        self.logfilepath = logfilepath or "./medai_log.md"
+
+    def log(self, message : str):
+        with open(self.logfilepath, "a") as f:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            f.write(f"\n[{timestamp}]: {message}\n")
+        
+    
 
 class Settings(metaclass=SingletonMeta):
     """

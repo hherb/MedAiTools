@@ -4,9 +4,9 @@ from RAG import RAG
 import os, os.path
 from functools import partial
 from EventDispatcher import EventDispatcher
+from medai.Settings import Logger
 
-
-
+logger = Logger()
 
 pn.extension('texteditor', notifications=True, loading_indicator=True, design="material")
 
