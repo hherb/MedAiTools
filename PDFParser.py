@@ -142,7 +142,7 @@ async def a_pdf2md(pdf_filename: str, output_md_filename: str = None, method: st
         raise ValueError(f"Unknown method: {method}")
     #some PDFs will have line numbers - remove them unless requested not to do so
     if remove_all_line_numbers:
-        remove_line_numbers(markdown_text)
+        markdown_text = remove_line_numbers(markdown_text)
     if output_md_filename is not None:
         async with aiofiles.open(output_md_filename, "w") as f:
             await f.write(markdown_text)

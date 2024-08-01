@@ -217,7 +217,7 @@ class EmbeddingSettings:
 class ResearcherSettings:
     def __init__(self):
         self.widgets={}
-        
+        self.widgets['TIMEOUT'] = pn.widgets.IntInput(name='Timeout (seconds)', value=600, sizing_mode='stretch_width')
         self.widgets['LLM_PROVIDER'] = pn.widgets.Select(name="LLM provider", options=list(AVAILABLE_CONFIGS.keys()), value='ollama')
         #if the provider changes, the model list has to be updated accordingly
         self.widgets['LLM_PROVIDER'].param.watch(self.on_provider_change, 'value')
@@ -342,11 +342,9 @@ def get_response(contents, user, instance):
         #do a full research
         currentResearcherSettings.activate()
         params=currentResearcherSettings.get_settings()
-        fastmodel = params['FAST_LLM_MODEL']
-        smartmodel = params['SMART_LLM_MODEL']
-        temperature = params['TEMPERATURE']
+        timeout = params['TIMEOUT']
         #print(f"attempting to research question using fast LLM: {fastmodel}, smart LLM {smartmodel} with temperature {temperature}")
-        answer = asyncio.run(get_response_async(contents[1:], research_params=params))
+        answer = asyncio.run(get_response_async(contents[1:], research_params=params, timeout=timeout))
         logger.log(f"\n{'='*50}\n{json.dumps(params)}\nQUESTION: {contents[1:]}\n {answer}")
     else:
         #just answer a simple question

@@ -1,0 +1,5 @@
+FROM /Users/hherb/.cache/lm-studio/models/MaziyarPanahi/Llama-3-8B-Instruct-32k-v0.1-GGUF/Llama-3-8B-Instruct-32k-v0.1.Q8_0.gguf
+PARAMETER temperature 0.1
+PARAMETER num_ctx 32000
+SYSTEM "You are a professional physician communicating with other health professionals. Your expertise is in analysing and criticising medical publications""
+
