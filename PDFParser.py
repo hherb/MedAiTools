@@ -36,7 +36,7 @@ import logging
 import pymupdf4llm  # pip install -U pymupdf4llm
 from llama_parse import LlamaParse
 from llmsherpa.readers import LayoutPDFReader #Requires a nlm-ingestor server running, eg via docker. See https://github.com/nlmatics/nlm-ingestor
-from weasyprint import HTML #needed to covert html into markdown
+#from weasyprint import HTML #needed to covert html into markdown
 import markdown
 from medai.tools.apikeys import load_api_keys  
 
@@ -238,7 +238,7 @@ def convert_md_to_pdf(markdown_text: str, output_pdf_filename: str):
     # Convert markdown to HTML
     html = markdown.markdown(markdown_text)
     # Convert to PDF
-    HTML(string=html).write_pdf(output_pdf_filename)
+    #HTML(string=html).write_pdf(output_pdf_filename)
 
 def convert_pdf_to_md(pdf_filename: str, output_md_filename: str, parser_api_url=LLMSHERPA_API_URL):
     # Convert PDF to HTML

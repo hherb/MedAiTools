@@ -27,7 +27,7 @@ from RAG_UI import PDFPanel
 from medai.tools.apikeys import load_api_keys  
 from medai.Settings import Settings, Logger
 from PersistentStorage import PublicationStorage
-#from EventDispatcher import EventDispatcher
+from EventDispatcher import EventDispatcher
 from medai import LLM   
 from EventDispatcher import EventDispatcher
 
@@ -255,7 +255,7 @@ class ResearcherSettings:
 
     def on_provider_change(self, event):
         provider = event.new
-        print(f"selected provider for researcher: {provider}")
+        print(f"Selected provider for researcher: {provider}")
         models = LLM.get_models(provider)
         self.widgets['SMART_LLM_MODEL'].options = models
         self.widgets['SMART_LLM_MODEL'].value = models[0]
@@ -301,7 +301,7 @@ currentLLMSettings=LLMSettings()
 currentEmbeddingSettings=EmbeddingSettings()
 currentResearcherSettings=ResearcherSettings()
 
-async def get_response_async(contents, timeout=500, research_params=None):
+async def get_response_async(contents, timeout=1800, research_params=None):
     """
     Async function to get the AI agent's response.
     This function takes in some contents as input and then waits for
@@ -346,6 +346,7 @@ def get_response(contents, user, instance):
         #print(f"attempting to research question using fast LLM: {fastmodel}, smart LLM {smartmodel} with temperature {temperature}")
         answer = asyncio.run(get_response_async(contents[1:], research_params=params, timeout=timeout))
         logger.log(f"\n{'='*50}\n{json.dumps(params)}\nQUESTION: {contents[1:]}\n {answer}")
+        #return answer
     else:
         #just answer a simple question
         params = currentLLMSettings.get_settings()
@@ -356,16 +357,65 @@ def get_response(contents, user, instance):
         response = LLM.llm_response(contents[1:].strip(), 
                                     provider=provider,
                                     modelname=modelname,
-                                    temperature=temperature,)
-        # instance.send(f"question answered by LLM {modelname} (temp={temperature}) :", 
-        #               respond=False, 
-        #               user=f"LLM {modelname} (temp={temperature})",
-        #               avatar="🤖")
+                                    temperature=temperature,
+                                    )
+        instance.send(f">>> question answered by LLM {modelname} (temp={temperature}) :", 
+                      respond=False, 
+                      user=f"LLM {modelname} (temp={temperature})",
+                      avatar="🤖")
+        answer=f"<span style='color:blue'><sup>question answered by LLM {provider}/{modelname} (temp={temperature}) :</sup></span>\n"
+        # for chunk in response:
+        #     answer += chunk
+        #     yield(chunk)
         answer = f"<span style='color:blue'><sup>question answered by LLM {provider}/{modelname} (temp={temperature}) :</sup></span>\n" + response
         logger.log(answer)
     return answer
     
+def get_streaming_response(contents, user, instance):   
+    """
+    This function determines the type of query and accordingly calls either a full research or a simple question answering routine.
 
+    Parameters:
+    contents (str): The content to be processed by the AI agent.
+    user (object): The user object that initiated the request.
+    instance (object): An instance of the class handling the request.
+
+    Returns:
+    response (str): The response from the AI agent, which can be a research result or an answer to a simple question.
+    """
+    if contents.startswith('@'):
+        #do a full research
+        currentResearcherSettings.activate()
+        params=currentResearcherSettings.get_settings()
+        timeout = params['TIMEOUT']
+        #print(f"attempting to research question using fast LLM: {fastmodel}, smart LLM {smartmodel} with temperature {temperature}")
+        answer = asyncio.run(get_response_async(contents[1:], research_params=params, timeout=timeout))
+        logger.log(f"\n{'='*50}\n{json.dumps(params)}\nQUESTION: {contents[1:]}\n {answer}")
+        yield(answer)
+    else:
+        #just answer a simple question
+        params = currentLLMSettings.get_settings()
+        provider = params['provider']
+        modelname = params['models']
+        temperature = params['temperature']
+        logger.log(f"## Question: {contents}")        
+        response = LLM.llm_response(contents[1:].strip(), 
+        #response = LLM.comple
+                                    provider=provider,
+                                    modelname=modelname,
+                                    temperature=temperature,
+                                    )
+        instance.send(f">>> question answered by LLM {modelname} (temp={temperature}) :", 
+                      respond=False, 
+                      user=f"LLM {modelname} (temp={temperature})",
+                      avatar="🤖")
+        answer=f"<span style='color:blue'><sup>question answered by LLM {provider}/{modelname} (temp={temperature}) :</sup></span>\n"
+        for chunk in response:
+             answer += chunk
+             yield(chunk)
+        answer = f"<span style='color:blue'><sup>question answered by LLM {provider}/{modelname} (temp={temperature}) :</sup></span>\n" + response
+        logger.log(answer)
+    
 
 
 def pdf2RAG(pdf):

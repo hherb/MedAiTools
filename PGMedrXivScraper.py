@@ -530,7 +530,7 @@ class MedrXivAssistant:
       
 if __name__=="__main__":
     scraper = MedrXivScraper()
-    scraper.fetch_latest_publications(fetch_pdfs=True)
+    #scraper.fetch_latest_publications(fetch_pdfs=True)
     #scraper.fetch_all_missing_pdfs()
     scraper.update_summaries()
     #assistant = MedrXivAssistant()

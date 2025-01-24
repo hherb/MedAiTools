@@ -3,10 +3,11 @@ from phi.assistant import Assistant
 from phi.tools.duckduckgo import DuckDuckGo
 from phi.tools.wikipedia import WikipediaTools
 from phi.tools.pubmed import PubmedTools
-
+from dotenv import load_dotenv, find_dotenv
 
 query = "Effect of Doxycycline on scabies"
 agents = []
+load_dotenv()
 
 Topassistant= Assistant(tools=[PubmedTools(), WikipediaTools(), DuckDuckGo()], show_tool_calls=True)
 DDGAssistant= Assistant(tools=[DuckDuckGo()], show_tool_calls=True)

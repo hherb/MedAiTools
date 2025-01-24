@@ -152,7 +152,7 @@ class SemanticSummarizer:
         return out
     
 
-    def summarize_stage_1(chunks_text):
+    def summarize_stage_1(self, chunks_text):
   
         print(f'Start time: {datetime.now()}')
 

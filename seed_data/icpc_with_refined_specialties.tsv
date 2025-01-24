@@ -1,0 +1,726 @@
+A01	Pain general/multiple sites	Specialty
+A02	Chills	General Medicine
+A03	Fever	General Medicine
+A04	Weakness/tiredness general	General Medicine
+A05	Feeling ill	General Medicine
+A06	Fainting/syncope	General Medicine
+A07	Coma	General Medicine
+A08	Swelling	General Medicine
+A09	Sweating problem	General Medicine
+A10	Bleeding/haemorrhage NOS	General Medicine
+A11	Chest pain NOS	General Medicine
+A13	Concern/fear medical treatment	General Medicine
+A16	Irritable infant	General Medicine
+A18	Concern about appearance	General Medicine
+A20	Euthanasia request/discussion	General Medicine
+A21	Risk factor for malignancy	General Medicine
+A23	Risk factor NOS	General Medicine
+A25	Fear of death/dying	General Medicine
+A26	Fear of cancer, NOS	General Medicine
+A27	Fear of other disease NOS	General Medicine
+A28	Limited function/disability NOS	General Medicine
+A29	General symptom/complaint other	General Medicine
+A70	Tuberculosis	General Medicine
+A71	Measles	General Medicine
+A72	Chickenpox	General Medicine
+A73	Malaria	General Medicine
+A74	Rubella	General Medicine
+A75	Infectious mononucleosis	General Medicine
+A76	Viral exanthem other	General Medicine
+A77	Viral disease other/NOS	General Medicine
+A78	Infectious disease other/NOS	General Medicine
+A79	Malignancy NOS	General Medicine
+A80	Trauma/injury NOS	General Medicine
+A81	Multiple trauma/injuries	General Medicine
+A82	Secondary effect of trauma	General Medicine
+A84	Poisoning by medical agent	General Medicine
+A85	Adverse effect medical agent	General Medicine
+A86	Toxic effect non-medicinal substance	General Medicine
+A87	Complication of medical treatment	General Medicine
+A88	Adverse effect physical factor	General Medicine
+A89	Effect prosthetic device	General Medicine
+A90	Congenital anomaly NOS/multiple	General Medicine
+A91	Abnormal result investigation NOS	General Medicine
+A92	Allergy/allergic reaction NOS	General Medicine
+A93	Premature newborn	General Medicine
+A94	Perinatal morbidity other	General Medicine
+A95	Perinatal mortality	General Medicine
+A96	Death	General Medicine
+A97	No disease	General Medicine
+A98	Health maint/preventive medicine	General Medicine
+A99	Disease/condition unspecnature/site	General Medicine
+B02	Lymph gland(s) enlarged/painful	General Medicine
+B04	Blood symptom/complaint	General Medicine
+B25	Fear of AIDS/HIV	General Medicine
+B26	Fear cancer blood/lymph	General Medicine
+B27	Fear blood/lymph disease other	General Medicine
+B28	Limited function/disability (B)	General Medicine
+B29	Lymph/immune mech sympt/complt other	General Medicine
+B70	Lymphadenitis acute	General Medicine
+B71	Lymphadenitis chronic/non-specific	General Medicine
+B72	Hodgkin Lymphoma	General Medicine
+B73	Leukaemia	General Medicine
+B74	Malignant neoplasm blood other	General Medicine
+B75	Neoplasm blood benign/unspecified	General Medicine
+B76	Ruptured spleen traumatic	General Medicine
+B77	Injury blood/lymph/spleen other	General Medicine
+B78	Hereditary haemolytic anaemia	General Medicine
+B79	Congen anomaly blood/lymph other	General Medicine
+B80	Iron deficiency anaemia	General Medicine
+B81	Anaemia vit B12/folate deficiency	General Medicine
+B82	Anaemia other/unspecified	General Medicine
+B83	Purpura/coagulation defect	General Medicine
+B84	Unexplained abnormal white cells	General Medicine
+B87	Splenomegaly	General Medicine
+B90	HIV-infection/AIDS	General Medicine
+B99	Blood/lymph/spleen disease other	General Medicine
+D01	Abdominal pain/cramps general	General Medicine
+D02	Abdominal pain epigastric	General Medicine
+D03	Heartburn	General Medicine
+D04	Rectal/anal pain	General Medicine
+D05	Perianal itching	General Medicine
+D06	Abdominal pain localized other	General Medicine
+D07	Dyspepsia/indigestion	General Medicine
+D08	Flatulence/gas/belching	General Medicine
+D09	Nausea	General Medicine
+D10	Vomiting	General Medicine
+D11	Diarrhoea	General Medicine
+D12	Constipation	General Medicine
+D13	Jaundice	General Medicine
+D14	Haematemesis/vomiting blood	General Medicine
+D15	Melaena	General Medicine
+D16	Rectal bleeding	General Medicine
+D17	Incontinence of bowel	General Medicine
+D18	Change in faeces/bowel movements	General Medicine
+D19	Teeth/gum symptom/complaint	General Medicine
+D20	Mouth/tongue/lip symptom/complaint	General Medicine
+D21	Swallowing problem	General Medicine
+D23	Hepatomegaly	General Medicine
+D24	Abdominal mass NOS	General Medicine
+D25	Abdominal distension	General Medicine
+D26	Fear of cancer of digestive system	General Medicine
+D27	Fear of digestive disease other	General Medicine
+D28	Limited function/disability (D)	General Medicine
+D29	Digestive symptom/complaint other	General Medicine
+D70	Gastrointestinal infection	General Medicine
+D71	Mumps	General Medicine
+D72	Viral hepatitis	General Medicine
+D73	Gastroenteritis presumed infection	General Medicine
+D74	Malignant neoplasm stomach	General Medicine
+D75	Malignant neoplasm colon/rectum	General Medicine
+D76	Malignant neoplasm pancreas	General Medicine
+D77	Malignant digestive neopl other/NOS	General Medicine
+D78	Neoplasm digestive benign/unspecif	General Medicine
+D79	Foreign body digestive system	General Medicine
+D80	Injury digestive system other	General Medicine
+D81	Congenital anomaly digestive system	General Medicine
+D82	Teeth/gum disease	General Medicine
+D83	Mouth/tongue/lip disease	General Medicine
+D84	Oesophagus disease	General Medicine
+D85	Duodenal ulcer	General Medicine
+D86	Peptic ulcer other	General Medicine
+D87	Stomach function disorder	General Medicine
+D88	Appendicitis	General Medicine
+D89	Inguinal hernia	General Medicine
+D90	Hiatus hernia	General Medicine
+D91	Abdominal hernia other	General Medicine
+D92	Diverticular disease	General Medicine
+D93	Irritable bowel syndrome	General Medicine
+D94	Chronic enteritis/ulcerative colitis	General Medicine
+D95	Anal fissure/perianal abscess	General Medicine
+D96	Worms/other parasites	General Medicine
+D97	Liver disease NOS	General Medicine
+D98	Cholecystitis/cholelithiasis	General Medicine
+D99	Disease digestive system other	General Medicine
+F01	Eye pain	General Medicine
+F02	Red eye	General Medicine
+F03	Eye discharge	General Medicine
+F04	Visual floaters/spots	General Medicine
+F05	Visual disturbance other	General Medicine
+F13	Eye sensation abnormal	General Medicine
+F14	Eye movements abnormal	General Medicine
+F15	Eye appearance abnormal	General Medicine
+F16	Eyelid symptom/complaint	General Medicine
+F17	Glasses symptom/complaint	General Medicine
+F18	Contact lens symptom/complaint	General Medicine
+F27	Fear of eye disease	General Medicine
+F28	Limited function/disability (F)	General Medicine
+F29	Eye symptom/complaint other	General Medicine
+F70	Conjunctivitis infectious	General Medicine
+F71	Conjunctivitis allergic	General Medicine
+F72	Blepharitis/stye/chalazion	General Medicine
+F73	Eye infection/inflammation other	General Medicine
+F74	Neoplasm of eye/adnexa	General Medicine
+F75	Contusion/haemorrhage eye	General Medicine
+F76	Foreign body in eye	General Medicine
+F79	Injury eye other	General Medicine
+F80	Blocked lacrimal duct of infant	General Medicine
+F81	Congenital anomaly eye other	General Medicine
+F82	Detached retina	General Medicine
+F83	Retinopathy	General Medicine
+F84	Macular degeneration	General Medicine
+F85	Corneal ulcer	General Medicine
+F86	Trachoma	General Medicine
+F91	Refractive error	General Medicine
+F92	Cataract	General Medicine
+F93	Glaucoma	General Medicine
+F94	Blindness	General Medicine
+F95	Strabismus	General Medicine
+F99	Eye/adnexa disease other	General Medicine
+H01	Ear pain/earache	General Medicine
+H02	Hearing complaint	General Medicine
+H03	Tinnitus, ringing/buzzing ear	General Medicine
+H04	Ear discharge	General Medicine
+H05	Bleeding ear	General Medicine
+H13	Plugged feeling ear	General Medicine
+H15	Concern with appearance of ears	General Medicine
+H27	Fear of ear disease	General Medicine
+H28	Limited function/disability (H)	General Medicine
+H29	Ear symptom/complaint other	General Medicine
+H70	Otitis externa	General Medicine
+H71	Acute otitis media/myringitis	General Medicine
+H72	Serous otitis media	General Medicine
+H73	Eustachian salpingitis	General Medicine
+H74	Chronic otitis media	General Medicine
+H75	Neoplasm of ear	General Medicine
+H76	Foreign body in ear	General Medicine
+H77	Perforation ear drum	General Medicine
+H78	Superficial injury of ear	General Medicine
+H79	Ear injury other	General Medicine
+H80	Congenital anomaly of ear	General Medicine
+H81	Excessive ear wax	General Medicine
+H82	Vertiginous syndrome	General Medicine
+H83	Otosclerosis	General Medicine
+H84	Presbyacusis	General Medicine
+H85	Acoustic trauma	General Medicine
+H86	Deafness	General Medicine
+H99	Ear/mastoid disease other	General Medicine
+K01	Heart pain	General Medicine
+K02	Pressure/tightness of heart	General Medicine
+K03	Cardiovascular pain NOS	General Medicine
+K04	Palpitations/awareness of heart	General Medicine
+K05	Irregular heartbeat other	General Medicine
+K06	Prominent veins	General Medicine
+K07	Swollen ankles/oedema	General Medicine
+K22	Risk factor cardiovascular disease	General Medicine
+K24	Fear of heart disease	General Medicine
+K25	Fear of hypertension	General Medicine
+K27	Fear cardiovascular disease other	General Medicine
+K28	Limited function/disability (K)	General Medicine
+K29	Cardiovascular sympt/complt other	General Medicine
+K70	Infection of circulatory system	General Medicine
+K71	Rheumatic fever/heart disease	General Medicine
+K72	Neoplasm cardiovascular	General Medicine
+K73	Congenital anomaly cardiovascular	General Medicine
+K74	Ischaemic heart dis with angina	General Medicine
+K75	Acute myocardial infarction	General Medicine
+K76	Ischaemic heart dis without angina	General Medicine
+K77	Heart failure	General Medicine
+K78	Atrial fibrillation/flutter	General Medicine
+K79	Paroxysmal tachycardia	General Medicine
+K80	Cardiac arrhythmia NOS	General Medicine
+K81	Heart/arterial murmur NOS	General Medicine
+K82	Pulmonary heart disease	General Medicine
+K83	Heart valve disease NOS	General Medicine
+K84	Heart disease other	General Medicine
+K85	Elevated blood pressure	General Medicine
+K86	Hypertension uncomplicated	General Medicine
+K87	Hypertension complicated	General Medicine
+K88	Postural hypotension	General Medicine
+K89	Transient cerebral ischaemia	General Medicine
+K90	Stroke/cerebrovascular accident	General Medicine
+K91	Cerebrovascular disease	General Medicine
+K92	Atherosclerosis/periph vascular dis	General Medicine
+K93	Pulmonary embolism	General Medicine
+K94	Phlebitis/thrombophlebitis	General Medicine
+K95	Varicose veins of leg	General Medicine
+K96	Haemorrhoids	General Medicine
+K99	Cardiovascular disease other	General Medicine
+L01	Neck symptom/complaint	General Medicine
+L02	Back symptom/complaint	General Medicine
+L03	Low back symptom/complaint	General Medicine
+L04	Chest symptom/complaint	General Medicine
+L05	Flank/axilla symptom/complaint	General Medicine
+L07	Jaw symptom/complaint	General Medicine
+L08	Shoulder symptom/complaint	General Medicine
+L09	Arm symptom/complaint	General Medicine
+L10	Elbow symptom/complaint	General Medicine
+L11	Wrist symptom/complaint	General Medicine
+L12	Hand/finger symptom/complaint	General Medicine
+L13	Hip symptom/complaint	General Medicine
+L14	Leg/thigh symptom/complaint	General Medicine
+L15	Knee symptom/complaint	General Medicine
+L16	Ankle symptom/complaint	General Medicine
+L17	Foot/toe symptom/complaint	General Medicine
+L18	Muscle pain	General Medicine
+L19	Muscle symptom/complaint NOS	General Medicine
+L20	Joint symptom/complaint NOS	General Medicine
+L26	Fear of cancer musculoskeletal	General Medicine
+L27	Fear of musculoskeletal dis other	General Medicine
+L28	Limited function/disability (L)	General Medicine
+L29	Musculoskeletal sympt/complt other	General Medicine
+L70	Infection of musculoskeletal system	General Medicine
+L71	Malignant neoplasm musculoskeletal	General Medicine
+L72	Fracture: radius/ulna	General Medicine
+L73	Fracture: tibia/fibula	General Medicine
+L74	Fracture: hand/foot bone	General Medicine
+L75	Fracture: femur	General Medicine
+L76	Fracture: other	General Medicine
+L77	Sprain/strain of ankle	General Medicine
+L78	Sprain/strain of knee	General Medicine
+L79	Sprain/strain of joint NOS	General Medicine
+L80	Dislocation/subluxation	General Medicine
+L81	Injury musculoskeletal NOS	General Medicine
+L82	Congenital anomaly musculoskeletal	General Medicine
+L83	Neck syndrome	General Medicine
+L84	Back syndrome without radiat pain	General Medicine
+L85	Acquired deformity of spine	General Medicine
+L86	Back syndrome with radiating pain	General Medicine
+L87	Bursitis/tendinitis/synovitis NOS	General Medicine
+L88	Rheumatoid/seropositive arthritis	General Medicine
+L89	Osteoarthrosis of hip	General Medicine
+L90	Osteoarthrosis of knee	General Medicine
+L91	Osteoarthrosis other	General Medicine
+L92	Shoulder syndrome	General Medicine
+L93	Tennis elbow	General Medicine
+L94	Osteochondrosis	General Medicine
+L95	Osteoporosis	General Medicine
+L96	Acute internal damage knee	General Medicine
+L97	Neoplasm musculoskel benign/unspec	General Medicine
+L98	Acquired deformity of limb	General Medicine
+L99	Musculoskeletal disease other	General Medicine
+N01	Headache	General Medicine
+N03	Pain face	General Medicine
+N04	Restless legs	General Medicine
+N05	Tingling fingers/feet/toes	General Medicine
+N06	Sensation disturbance other	General Medicine
+N07	Convulsion/seizure	General Medicine
+N08	Abnormal involuntary movements	General Medicine
+N16	Disturbance of smell/taste	General Medicine
+N17	Vertigo/dizziness	General Medicine
+N18	Paralysis/weakness	General Medicine
+N19	Speech disorder	General Medicine
+N26	Fear cancer neurological system	General Medicine
+N27	Fear of neurological disease other	General Medicine
+N28	Limited function/disability (N)	General Medicine
+N29	Neurological sympt/complt other	General Medicine
+N70	Poliomyelitis	General Medicine
+N71	Meningitis/encephalitis	General Medicine
+N72	Tetanus	General Medicine
+N73	Neurological infection other	General Medicine
+N74	Malignant neoplasm nervous system	General Medicine
+N75	Benign neoplasm nervous system	General Medicine
+N76	Neoplasm nervous system unspecified	General Medicine
+N79	Concussion	General Medicine
+N80	Head injury other	General Medicine
+N81	Injury nervous system other	General Medicine
+N85	Congenital anomaly neurological	General Medicine
+N86	Multiple sclerosis	General Medicine
+N87	Parkinsonism	General Medicine
+N88	Epilepsy	General Medicine
+N89	Migraine	General Medicine
+N90	Cluster headache	General Medicine
+N91	Facial paralysis/bell's palsy	General Medicine
+N92	Trigeminal neuralgia	General Medicine
+N93	Carpal tunnel syndrome	General Medicine
+N94	Peripheral neuritis/neuropathy	General Medicine
+N95	Tension headache	General Medicine
+N99	Neurological disease other	General Medicine
+P01	Feeling anxious/nervous/tense	General Medicine
+P02	Acute stress reaction	General Medicine
+P03	Feeling depressed	General Medicine
+P04	Feeling/behaving irritable/angry	General Medicine
+P05	Senility, feeling/behaving old	General Medicine
+P06	Sleep disturbance	General Medicine
+P07	Sexual desire reduced	General Medicine
+P08	Sexual fulfilment reduced	General Medicine
+P09	Sexual preference concern	General Medicine
+P10	Stammering/stuttering/tic	General Medicine
+P11	Eating problem in child	General Medicine
+P12	Bedwetting/enuresis	General Medicine
+P13	Encopresis/bowel training problem	General Medicine
+P15	Chronic alcohol abuse	General Medicine
+P16	Acute alcohol abuse	General Medicine
+P17	Tobacco abuse	General Medicine
+P18	Medication abuse	General Medicine
+P19	Drug abuse	General Medicine
+P20	Memory disturbance	General Medicine
+P22	Child behaviour symptom/complaint	General Medicine
+P23	Adolescent behaviour sympt/compl	General Medicine
+P24	Specific learning problem	General Medicine
+P25	Phase of life problem adult	General Medicine
+P27	Fear of mental disorder	General Medicine
+P28	Limited function/disability (P)	General Medicine
+P29	Psychological sympt/compl other	General Medicine
+P70	Dementia	General Medicine
+P71	Organic psychosis other	General Medicine
+P72	Schizophrenia	General Medicine
+P73	Affective psychosis	General Medicine
+P74	Anxiety disorder/anxiety state	General Medicine
+P75	Somatization disorder	General Medicine
+P76	Depressive disorder	General Medicine
+P77	Suicide/suicide attempt	General Medicine
+P78	Neuraesthenia/surmenage	General Medicine
+P79	Phobia/compulsive disorder	General Medicine
+P80	Personality disorder	General Medicine
+P81	Hyperkinetic disorder	General Medicine
+P82	Post-traumatic stress disorder	General Medicine
+P85	Mental retardation	General Medicine
+P86	Anorexia nervosa/bulimia	General Medicine
+P98	Psychosis NOS/other	General Medicine
+P99	Psychological disorders other	General Medicine
+R01	Pain respiratory system	General Medicine
+R02	Shortness of breath/dyspnoea	General Medicine
+R03	Wheezing	General Medicine
+R04	Breathing problem other	General Medicine
+R05	Cough	General Medicine
+R06	Nose bleed/epistaxis	General Medicine
+R07	Sneezing/nasal congestion	General Medicine
+R08	Nose symptom/complaint other	General Medicine
+R09	Sinus symptom/complaint	General Medicine
+R21	Throat symptom/complaint	General Medicine
+R23	Voice symptom/complaint	General Medicine
+R24	Haemoptysis	General Medicine
+R25	Sputum/phlegm abnormal	General Medicine
+R26	Fear  cancer  respiratory system	General Medicine
+R27	Fear of respiratory disease other	General Medicine
+R28	Limited function/disability (R)	General Medicine
+R29	Respiratory symptom/complaint other	General Medicine
+R71	Whooping cough	General Medicine
+R72	Strep throat	General Medicine
+R73	Boil/abscess nose	General Medicine
+R74	Upper respiratory infection acute	General Medicine
+R75	Sinusitis acute/chronic	General Medicine
+R76	Tonsillitis acute	General Medicine
+R77	Laryngitis/tracheitis acute	General Medicine
+R78	Acute bronchitis/bronchiolitis	General Medicine
+R79	Chronic bronchitis	General Medicine
+R80	Influenza	General Medicine
+R81	Pneumonia	General Medicine
+R82	Pleurisy/pleural effusion	General Medicine
+R83	Respiratory infection other	General Medicine
+R84	Malignant neoplasm bronchus/lung	General Medicine
+R85	Malignant neopl respiratory other	General Medicine
+R86	Benign neoplasm respiratory	General Medicine
+R87	Foreign body nose/larynx/bronchus	General Medicine
+R88	Injury respiratory other	General Medicine
+R89	Congenital anomaly respiratory	General Medicine
+R90	Hypertrophy tonsils/adenoids	General Medicine
+R92	Neoplasm respiratory unspecified	General Medicine
+R95	Chron obstructive pulmonary disease	General Medicine
+R96	Asthma	General Medicine
+R97	Allergic rhinitis	General Medicine
+R98	Hyperventilation syndrome	General Medicine
+R99	Respiratory disease other	General Medicine
+S01	Pain/tenderness of skin	General Medicine
+S02	Pruritus	General Medicine
+S03	Warts	General Medicine
+S04	Lump/swelling localized	General Medicine
+S05	Lumps/swellings generalized	General Medicine
+S06	Rash localized	General Medicine
+S07	Rash generalized	General Medicine
+S08	Skin colour change	General Medicine
+S09	Infected finger/toe	General Medicine
+S10	Boil/carbuncle	General Medicine
+S11	Skin infection post-traumatic	General Medicine
+S12	Insect bite/sting	General Medicine
+S13	Animal/human bite	General Medicine
+S14	Burn/scald	General Medicine
+S15	Foreign body in skin	General Medicine
+S16	Bruise/contusion	General Medicine
+S17	Abrasion/scratch/blister	General Medicine
+S18	Laceration/cut	General Medicine
+S19	Skin injury other	General Medicine
+S20	Corn/callosity	General Medicine
+S21	Skin texture symptom/complaint	General Medicine
+S22	Nail symptom/complaint	General Medicine
+S23	Hair loss/baldness	General Medicine
+S24	Hair/scalp symptom/complaint other	General Medicine
+S26	Fear of cancer of skin	General Medicine
+S27	Fear of skin disease other	General Medicine
+S28	Limited function/disability (S)	General Medicine
+S29	Skin symptom/complaint other	General Medicine
+S70	Herpes zoster	General Medicine
+S71	Herpes simplex	General Medicine
+S72	Scabies/other acariasis	General Medicine
+S73	Pediculosis/skin infestation other	General Medicine
+S74	Dermatophytosis	General Medicine
+S75	Moniliasis/candidiasis skin	General Medicine
+S76	Skin infection other	General Medicine
+S77	Malignant neoplasm of skin	General Medicine
+S78	Lipoma	General Medicine
+S79	Neoplasm skin benign/unspecified	General Medicine
+S80	Solar keratosis/sunburn	General Medicine
+S81	Haemangioma/lymphangioma	General Medicine
+S82	Naevus/mole	General Medicine
+S83	Congenital skin anomaly other	General Medicine
+S84	Impetigo	General Medicine
+S85	Pilonidal cyst/fistula	General Medicine
+S86	Dermatitis seborrhoeic	General Medicine
+S87	Dermatitis/atopic eczema	General Medicine
+S88	Dermatitis contact/allergic	General Medicine
+S89	Diaper rash	General Medicine
+S90	Pityriasis rosea	General Medicine
+S91	Psoriasis	General Medicine
+S92	Sweat gland disease	General Medicine
+S93	Sebaceous cyst	General Medicine
+S94	Ingrowing nail	General Medicine
+S95	Molluscum contagiosum	General Medicine
+S96	Acne	General Medicine
+S97	Chronic ulcer skin	General Medicine
+S98	Urticaria	General Medicine
+S99	Skin disease other	General Medicine
+T01	Excessive thirst	General Medicine
+T02	Excessive appetite	General Medicine
+T03	Loss of appetite	General Medicine
+T04	Feeding problem of infant/child	General Medicine
+T05	Feeding problem of adult	General Medicine
+T07	Weight gain	General Medicine
+T08	Weight loss	General Medicine
+T10	Growth delay	General Medicine
+T11	Dehydration	General Medicine
+T26	Fear of cancer of endocrine system	General Medicine
+T27	Fear endocrine/metabol disease other	General Medicine
+T28	Limited function/disability (T)	General Medicine
+T29	Endocr/metab/nutr sympt/compl other	General Medicine
+T70	Endocrine infection	General Medicine
+T71	Malignant neoplasm thyroid	General Medicine
+T72	Benign neoplasm thyroid	General Medicine
+T73	Neoplasm endocrine other/unspecified	General Medicine
+T78	Thyroglossal duct/cyst	General Medicine
+T80	Congen  anomaly endocrine/metabolic	General Medicine
+T81	Goitre	General Medicine
+T82	Obesity	General Medicine
+T83	Overweight	General Medicine
+T85	Hyperthyroidism/thyrotoxicosis	General Medicine
+T86	Hypothyroidism/myxoedema	General Medicine
+T87	Hypoglycaemia	General Medicine
+T89	Diabetes insulin dependent	General Medicine
+T90	Diabetes non-insulin dependent	General Medicine
+T91	Vitamin/nutritional deficiency	General Medicine
+T92	Gout	General Medicine
+T93	Lipid disorder	General Medicine
+T99	Endocr/metab/nutrit disease other	General Medicine
+U01	Dysuria/painful urination	General Medicine
+U02	Urinary frequency/urgency	General Medicine
+U04	Incontinence urine	General Medicine
+U05	Urination problems other	General Medicine
+U06	Haematuria	General Medicine
+U07	Urine symptom/complaint other	General Medicine
+U08	Urinary retention	General Medicine
+U13	Bladder symptom/complaint other	General Medicine
+U14	Kidney symptom/complaint	General Medicine
+U26	Fear of cancer of urinary system	General Medicine
+U27	Fear of urinary disease other	General Medicine
+U28	Limited function/disability (U)	General Medicine
+U29	Urinary symptom/complaint other	General Medicine
+U70	Pyelonephritis/pyelitis	General Medicine
+U71	Cystitis/urinary infection other	General Medicine
+U72	Urethritis	General Medicine
+U75	Malignant neoplasm of kidney	General Medicine
+U76	Malignant neoplasm of bladder	General Medicine
+U77	Malignant neopl urinary tract other	General Medicine
+U78	Benign neoplasm urinary tract	General Medicine
+U79	Neoplasm urinary tract unspecified	General Medicine
+U80	Injury urinary tract	General Medicine
+U85	Congenital anomaly urinary tract	General Medicine
+U88	Glomerulonephritis/nephrosis	General Medicine
+U90	Orthostatic albuminuria/proteinuria	General Medicine
+U95	Urinary calculus	General Medicine
+U98	Abnormal urine test NOS	General Medicine
+U99	Urinary disease other	General Medicine
+W01	Question of pregnancy	General Medicine
+W02	Fear of pregnancy	General Medicine
+W03	Antepartum bleeding	General Medicine
+W05	Pregnancy vomiting/nausea	General Medicine
+W10	Contraception postcoital	General Medicine
+W11	Contraception oral	General Medicine
+W12	Contraception intrauterine	General Medicine
+W13	Sterilization female	General Medicine
+W14	Contraception female other	General Medicine
+W15	Infertility/subfertility female	General Medicine
+W17	Post-partum bleeding	General Medicine
+W18	Post-partum symptom/complaint other	General Medicine
+W19	Lactation symptom/complaint	General Medicine
+W21	Concern with body image in pregnancy	General Medicine
+W27	Fear of complications of pregnancy	General Medicine
+W28	Limited function/disability (W)	General Medicine
+W29	Pregnancy symptom/complaint other	General Medicine
+W70	Puerperal infection/sepsis	General Medicine
+W71	Other infect complic pregn/puerp	General Medicine
+W72	Malignant neopl related to pregnancy	General Medicine
+W73	Benign/unspecif neopl relat to pregn	General Medicine
+W75	Injury complicating pregnancy	General Medicine
+W76	Congen anom complicating pregnancy	General Medicine
+W78	Pregnancy	General Medicine
+W79	Unwanted pregnancy	General Medicine
+W80	Ectopic pregnancy	General Medicine
+W81	Toxaemia of pregnancy	General Medicine
+W82	Abortion spontaneous	General Medicine
+W83	Abortion induced	General Medicine
+W84	Pregnancy high risk	General Medicine
+W85	Gestational diabetes	General Medicine
+W90	Uncompl labour/delivery livebirth	General Medicine
+W91	Uncompl labour/delivery stillbirth	General Medicine
+W92	Compl labour/ delivery livebirth	General Medicine
+W93	Compl labour/delivery stillbirth	General Medicine
+W94	Puerperal mastitis	General Medicine
+W95	Breast dis in pregn/puerperium other	General Medicine
+W96	Complications of puerperium other	General Medicine
+W99	Disorder of pregn/delivery other	General Medicine
+X01	Genital pain female	General Medicine
+X02	Menstrual pain	General Medicine
+X03	Intermenstrual pain	General Medicine
+X04	Painful intercourse female	General Medicine
+X05	Menstruation absent/scanty	General Medicine
+X06	Menstruation excessive	General Medicine
+X07	Menstruation irregular/frequent	General Medicine
+X08	Intermenstrual bleeding	General Medicine
+X09	Premenstrual symptom/complaint	General Medicine
+X10	Postponement of menstruation	General Medicine
+X11	Menopausal symptom/complaint	General Medicine
+X12	Postmenopausal bleeding	General Medicine
+X13	Postcoital bleeding	General Medicine
+X14	Vaginal discharge	General Medicine
+X15	Vaginal symptom/complaint other	General Medicine
+X16	Vulval symptom/complaint	General Medicine
+X17	Pelvis symptom/complaint female	General Medicine
+X18	Breast pain female	General Medicine
+X19	Breast lump/mass female	General Medicine
+X20	Nipple symptom/complaint female	General Medicine
+X21	Breast sympt/compl female other	General Medicine
+X22	Concern breast appearance fema	General Medicine
+X23	Fear sexually transm dis female	General Medicine
+X24	Fear of sexual dysfunction female	General Medicine
+X25	Fear of genital cancer female	General Medicine
+X26	Fear of breast cancer female	General Medicine
+X27	Fear genital/breast dis female other	General Medicine
+X28	Limited function/disability (X)	General Medicine
+X29	Genital sympt/compl female other	General Medicine
+X70	Syphilis female	General Medicine
+X71	Gonorrhoea female	General Medicine
+X72	Genital candidiasis female	General Medicine
+X73	Genital trichomoniasis female	General Medicine
+X74	Pelvic inflammatory disease	General Medicine
+X75	Malignant neoplasm cervix	General Medicine
+X76	Malignant neoplasm breast female	General Medicine
+X77	Malignant neopl genital female other	General Medicine
+X78	Fibromyoma uterus	General Medicine
+X79	Benign neoplasm breast female	General Medicine
+X80	Benign neoplasm female genital	General Medicine
+X81	Genital neopl female other/unspecif	General Medicine
+X82	Injury genital female	General Medicine
+X83	Congenital anomaly genital female	General Medicine
+X84	Vaginitis/vulvitis NOS	General Medicine
+X85	Cervical disease NOS	General Medicine
+X86	Abnormal cervix smear	General Medicine
+X87	Uterovaginal prolapse	General Medicine
+X88	Fibrocystic disease breast	General Medicine
+X89	Premenstrual tension syndrome	General Medicine
+X90	Genital herpes female	General Medicine
+X91	Condylomata acuminata female	General Medicine
+X92	Chlamydia infection genital female	General Medicine
+X99	Genital disease female other	General Medicine
+Y01	Pain in penis	General Medicine
+Y02	Pain in testis/scrotum	General Medicine
+Y03	Urethral discharge male	General Medicine
+Y04	Penis symptom/complaint other	General Medicine
+Y05	Scrotum/testis sympt/compl other	General Medicine
+Y06	Prostate symptom/complaint	General Medicine
+Y07	Impotence NOS	General Medicine
+Y08	Sexual function sympt/compl male	General Medicine
+Y10	Infertility/subfertility male	General Medicine
+Y13	Sterilization male	General Medicine
+Y14	Family planning male other	General Medicine
+Y16	Breast symptom/complaint male	General Medicine
+Y24	Fear of sexual dysfunction male	General Medicine
+Y25	Fear sexually transm disease male	General Medicine
+Y26	Fear of genital cancer male	General Medicine
+Y27	Fear of genital disease male other	General Medicine
+Y28	Limited function/disability (Y)	General Medicine
+Y29	Genital symptom/complaint male other	General Medicine
+Y70	Syphilis male	General Medicine
+Y71	Gonorrhoea male	General Medicine
+Y72	Genital herpes male	General Medicine
+Y73	Prostatitis/seminal vesiculitis	General Medicine
+Y74	Orchitis/epididymitis	General Medicine
+Y75	Balanitis	General Medicine
+Y76	Condylomata acuminata male	General Medicine
+Y77	Malignant neoplasm prostate	General Medicine
+Y78	Malign neopl male genital other	General Medicine
+Y79	Benign/unspecif neopl male genital	General Medicine
+Y80	Injury male genital	General Medicine
+Y81	Phimosis/redundant prepuce	General Medicine
+Y82	Hypospadias	General Medicine
+Y83	Undescended testicle	General Medicine
+Y84	Congenital genital anom male other	General Medicine
+Y85	Benign prostatic hypertrophy	General Medicine
+Y86	Hydrocoele	General Medicine
+Y99	Genital disease male other	General Medicine
+Z01	Poverty/financial problem	General Medicine
+Z02	Food/water problem	General Medicine
+Z03	Housing/neighbourhood problem	General Medicine
+Z04	Social cultural problem	General Medicine
+Z05	Work problem	General Medicine
+Z06	Unemployment problem	General Medicine
+Z07	Education problem	General Medicine
+Z08	Social welfare problem	General Medicine
+Z09	Legal problem	General Medicine
+Z10	Health care system problem	General Medicine
+Z11	Compliance/being ill problem	General Medicine
+Z12	Relationship problem with partner	General Medicine
+Z13	Partner's behaviour problem	General Medicine
+Z14	Partner illness problem	General Medicine
+Z15	Loss/death of partner problem	General Medicine
+Z16	Relationship problem with child	General Medicine
+Z18	Illness problem with child	General Medicine
+Z19	Loss/death of child problem	General Medicine
+Z20	Relationship problem parent/fam memb	General Medicine
+Z21	Behaviour problem parent/fam memb	General Medicine
+Z22	Illness problem parent/family memb	General Medicine
+Z23	Loss/death parent/fam memb problem	General Medicine
+Z24	Relationship problem friend	General Medicine
+Z25	Assault/harmful event problem	General Medicine
+Z27	Fear of a social problem	General Medicine
+Z28	Limited function/disability (Z)	General Medicine
+Z29	Social problem NOS	General Medicine
+-30	Medical examin/health eval complete	General Medicine
+-31	Medical examin/health eval partial	General Medicine
+-32	Sensitivity test	General Medicine
+-33	Microbiological/immunological test	General Medicine
+-34	Blood test	General Medicine
+-35	Urine test	General Medicine
+-36	Faeces test	General Medicine
+-37	Histological/exfoliative cytology	General Medicine
+-38	Other laboratory test NEC	General Medicine
+-39	Physical function test	General Medicine
+-40	Diagnostic endoscopy	General Medicine
+-41	Diagnostic radiology/imaging	General Medicine
+-42	Electrical tracing	General Medicine
+-43	Other diagnostic procedure	General Medicine
+-44	Preventive immunization/medic	General Medicine
+-45	Observ/health educat/advice/diet	General Medicine
+-46	Consultation primary care provider	General Medicine
+-47	Consultation with specialist	General Medicine
+-48	Clarification/discussion RFE/demand	General Medicine
+-49	Other preventive procedure	General Medicine
+-50	Medication/prescr/renewal/inject	General Medicine
+-51	I&d/flush/aspiration	General Medicine
+-52	Exc/remov/biopsy/destruc/debrid/caut	General Medicine
+-53	Instrument/catheter/intubate/dilate	General Medicine
+-54	Repair/fix-suture/cast/prosth device	General Medicine
+-55	Local injection/infiltration	General Medicine
+-56	Dressing/pressure/compress/tamponade	General Medicine
+-57	Physical medicine/rehabilitation	General Medicine
+-58	Therapeutic counselling/listening	General Medicine
+-59	Other therap proced/minor surg NEC	General Medicine
+-60	Result test/procedure	General Medicine
+-61	Result exam/test/lett oth provider	General Medicine
+-62	Administrative procedure	General Medicine
+-63	Follow-up encounter unspecified	General Medicine
+-64	Encounter/prob initiated by provider	General Medicine
+-65	Enc/prob init by other than pt/prov	General Medicine
+-66	Referral to non-md provider	General Medicine
+-67	Referral to physican/hospital	General Medicine
+-68	Other referral NEC	General Medicine
+-69	Other reason for encounter NEC	General Medicine

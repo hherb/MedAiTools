@@ -1,0 +1,726 @@
+A01	Pain general/multiple sites	Specialty
+A02	Chills	General Practice
+A03	Fever	General Practice
+A04	Weakness/tiredness general	General Practice
+A05	Feeling ill	General Practice
+A06	Fainting/syncope	General Practice
+A07	Coma	General Practice
+A08	Swelling	General Practice
+A09	Sweating problem	General Practice
+A10	Bleeding/haemorrhage NOS	General Practice
+A11	Chest pain NOS	General Practice
+A13	Concern/fear medical treatment	General Practice
+A16	Irritable infant	General Practice
+A18	Concern about appearance	General Practice
+A20	Euthanasia request/discussion	General Practice
+A21	Risk factor for malignancy	General Practice
+A23	Risk factor NOS	General Practice
+A25	Fear of death/dying	General Practice
+A26	Fear of cancer, NOS	General Practice
+A27	Fear of other disease NOS	General Practice
+A28	Limited function/disability NOS	General Practice
+A29	General symptom/complaint other	General Practice
+A70	Tuberculosis	General Practice
+A71	Measles	General Practice
+A72	Chickenpox	General Practice
+A73	Malaria	General Practice
+A74	Rubella	General Practice
+A75	Infectious mononucleosis	General Practice
+A76	Viral exanthem other	General Practice
+A77	Viral disease other/NOS	General Practice
+A78	Infectious disease other/NOS	General Practice
+A79	Malignancy NOS	General Practice
+A80	Trauma/injury NOS	General Practice
+A81	Multiple trauma/injuries	General Practice
+A82	Secondary effect of trauma	General Practice
+A84	Poisoning by medical agent	General Practice
+A85	Adverse effect medical agent	General Practice
+A86	Toxic effect non-medicinal substance	General Practice
+A87	Complication of medical treatment	General Practice
+A88	Adverse effect physical factor	General Practice
+A89	Effect prosthetic device	General Practice
+A90	Congenital anomaly NOS/multiple	General Practice
+A91	Abnormal result investigation NOS	General Practice
+A92	Allergy/allergic reaction NOS	General Practice
+A93	Premature newborn	General Practice
+A94	Perinatal morbidity other	General Practice
+A95	Perinatal mortality	General Practice
+A96	Death	General Practice
+A97	No disease	General Practice
+A98	Health maint/preventive medicine	General Practice
+A99	Disease/condition unspecnature/site	General Practice
+B02	Lymph gland(s) enlarged/painful	General Practice
+B04	Blood symptom/complaint	General Practice
+B25	Fear of AIDS/HIV	General Practice
+B26	Fear cancer blood/lymph	General Practice
+B27	Fear blood/lymph disease other	General Practice
+B28	Limited function/disability (B)	General Practice
+B29	Lymph/immune mech sympt/complt other	General Practice
+B70	Lymphadenitis acute	General Practice
+B71	Lymphadenitis chronic/non-specific	General Practice
+B72	Hodgkin Lymphoma	General Practice
+B73	Leukaemia	General Practice
+B74	Malignant neoplasm blood other	General Practice
+B75	Neoplasm blood benign/unspecified	General Practice
+B76	Ruptured spleen traumatic	General Practice
+B77	Injury blood/lymph/spleen other	General Practice
+B78	Hereditary haemolytic anaemia	General Practice
+B79	Congen anomaly blood/lymph other	General Practice
+B80	Iron deficiency anaemia	General Practice
+B81	Anaemia vit B12/folate deficiency	General Practice
+B82	Anaemia other/unspecified	General Practice
+B83	Purpura/coagulation defect	General Practice
+B84	Unexplained abnormal white cells	General Practice
+B87	Splenomegaly	General Practice
+B90	HIV-infection/AIDS	General Practice
+B99	Blood/lymph/spleen disease other	General Practice
+D01	Abdominal pain/cramps general	General Practice
+D02	Abdominal pain epigastric	General Practice
+D03	Heartburn	General Practice
+D04	Rectal/anal pain	General Practice
+D05	Perianal itching	General Practice
+D06	Abdominal pain localized other	General Practice
+D07	Dyspepsia/indigestion	General Practice
+D08	Flatulence/gas/belching	General Practice
+D09	Nausea	General Practice
+D10	Vomiting	General Practice
+D11	Diarrhoea	General Practice
+D12	Constipation	General Practice
+D13	Jaundice	General Practice
+D14	Haematemesis/vomiting blood	General Practice
+D15	Melaena	General Practice
+D16	Rectal bleeding	General Practice
+D17	Incontinence of bowel	General Practice
+D18	Change in faeces/bowel movements	General Practice
+D19	Teeth/gum symptom/complaint	General Practice
+D20	Mouth/tongue/lip symptom/complaint	General Practice
+D21	Swallowing problem	General Practice
+D23	Hepatomegaly	General Practice
+D24	Abdominal mass NOS	General Practice
+D25	Abdominal distension	General Practice
+D26	Fear of cancer of digestive system	General Practice
+D27	Fear of digestive disease other	General Practice
+D28	Limited function/disability (D)	General Practice
+D29	Digestive symptom/complaint other	General Practice
+D70	Gastrointestinal infection	General Practice
+D71	Mumps	General Practice
+D72	Viral hepatitis	General Practice
+D73	Gastroenteritis presumed infection	General Practice
+D74	Malignant neoplasm stomach	General Practice
+D75	Malignant neoplasm colon/rectum	General Practice
+D76	Malignant neoplasm pancreas	General Practice
+D77	Malignant digestive neopl other/NOS	General Practice
+D78	Neoplasm digestive benign/unspecif	General Practice
+D79	Foreign body digestive system	General Practice
+D80	Injury digestive system other	General Practice
+D81	Congenital anomaly digestive system	General Practice
+D82	Teeth/gum disease	General Practice
+D83	Mouth/tongue/lip disease	General Practice
+D84	Oesophagus disease	General Practice
+D85	Duodenal ulcer	General Practice
+D86	Peptic ulcer other	General Practice
+D87	Stomach function disorder	General Practice
+D88	Appendicitis	General Practice
+D89	Inguinal hernia	General Practice
+D90	Hiatus hernia	General Practice
+D91	Abdominal hernia other	General Practice
+D92	Diverticular disease	General Practice
+D93	Irritable bowel syndrome	General Practice
+D94	Chronic enteritis/ulcerative colitis	General Practice
+D95	Anal fissure/perianal abscess	General Practice
+D96	Worms/other parasites	General Practice
+D97	Liver disease NOS	General Practice
+D98	Cholecystitis/cholelithiasis	General Practice
+D99	Disease digestive system other	General Practice
+F01	Eye pain	General Practice
+F02	Red eye	General Practice
+F03	Eye discharge	General Practice
+F04	Visual floaters/spots	General Practice
+F05	Visual disturbance other	General Practice
+F13	Eye sensation abnormal	General Practice
+F14	Eye movements abnormal	General Practice
+F15	Eye appearance abnormal	General Practice
+F16	Eyelid symptom/complaint	General Practice
+F17	Glasses symptom/complaint	General Practice
+F18	Contact lens symptom/complaint	General Practice
+F27	Fear of eye disease	General Practice
+F28	Limited function/disability (F)	General Practice
+F29	Eye symptom/complaint other	General Practice
+F70	Conjunctivitis infectious	General Practice
+F71	Conjunctivitis allergic	General Practice
+F72	Blepharitis/stye/chalazion	General Practice
+F73	Eye infection/inflammation other	General Practice
+F74	Neoplasm of eye/adnexa	General Practice
+F75	Contusion/haemorrhage eye	General Practice
+F76	Foreign body in eye	General Practice
+F79	Injury eye other	General Practice
+F80	Blocked lacrimal duct of infant	General Practice
+F81	Congenital anomaly eye other	General Practice
+F82	Detached retina	General Practice
+F83	Retinopathy	General Practice
+F84	Macular degeneration	General Practice
+F85	Corneal ulcer	General Practice
+F86	Trachoma	General Practice
+F91	Refractive error	General Practice
+F92	Cataract	General Practice
+F93	Glaucoma	General Practice
+F94	Blindness	General Practice
+F95	Strabismus	General Practice
+F99	Eye/adnexa disease other	General Practice
+H01	Ear pain/earache	General Practice
+H02	Hearing complaint	General Practice
+H03	Tinnitus, ringing/buzzing ear	General Practice
+H04	Ear discharge	General Practice
+H05	Bleeding ear	General Practice
+H13	Plugged feeling ear	General Practice
+H15	Concern with appearance of ears	General Practice
+H27	Fear of ear disease	General Practice
+H28	Limited function/disability (H)	General Practice
+H29	Ear symptom/complaint other	General Practice
+H70	Otitis externa	General Practice
+H71	Acute otitis media/myringitis	General Practice
+H72	Serous otitis media	General Practice
+H73	Eustachian salpingitis	General Practice
+H74	Chronic otitis media	General Practice
+H75	Neoplasm of ear	General Practice
+H76	Foreign body in ear	General Practice
+H77	Perforation ear drum	General Practice
+H78	Superficial injury of ear	General Practice
+H79	Ear injury other	General Practice
+H80	Congenital anomaly of ear	General Practice
+H81	Excessive ear wax	General Practice
+H82	Vertiginous syndrome	General Practice
+H83	Otosclerosis	General Practice
+H84	Presbyacusis	General Practice
+H85	Acoustic trauma	General Practice
+H86	Deafness	General Practice
+H99	Ear/mastoid disease other	General Practice
+K01	Heart pain	General Practice
+K02	Pressure/tightness of heart	General Practice
+K03	Cardiovascular pain NOS	General Practice
+K04	Palpitations/awareness of heart	General Practice
+K05	Irregular heartbeat other	General Practice
+K06	Prominent veins	General Practice
+K07	Swollen ankles/oedema	General Practice
+K22	Risk factor cardiovascular disease	General Practice
+K24	Fear of heart disease	General Practice
+K25	Fear of hypertension	General Practice
+K27	Fear cardiovascular disease other	General Practice
+K28	Limited function/disability (K)	General Practice
+K29	Cardiovascular sympt/complt other	General Practice
+K70	Infection of circulatory system	General Practice
+K71	Rheumatic fever/heart disease	General Practice
+K72	Neoplasm cardiovascular	General Practice
+K73	Congenital anomaly cardiovascular	General Practice
+K74	Ischaemic heart dis with angina	General Practice
+K75	Acute myocardial infarction	General Practice
+K76	Ischaemic heart dis without angina	General Practice
+K77	Heart failure	General Practice
+K78	Atrial fibrillation/flutter	General Practice
+K79	Paroxysmal tachycardia	General Practice
+K80	Cardiac arrhythmia NOS	General Practice
+K81	Heart/arterial murmur NOS	General Practice
+K82	Pulmonary heart disease	General Practice
+K83	Heart valve disease NOS	General Practice
+K84	Heart disease other	General Practice
+K85	Elevated blood pressure	General Practice
+K86	Hypertension uncomplicated	General Practice
+K87	Hypertension complicated	General Practice
+K88	Postural hypotension	General Practice
+K89	Transient cerebral ischaemia	General Practice
+K90	Stroke/cerebrovascular accident	General Practice
+K91	Cerebrovascular disease	General Practice
+K92	Atherosclerosis/periph vascular dis	General Practice
+K93	Pulmonary embolism	General Practice
+K94	Phlebitis/thrombophlebitis	General Practice
+K95	Varicose veins of leg	General Practice
+K96	Haemorrhoids	General Practice
+K99	Cardiovascular disease other	General Practice
+L01	Neck symptom/complaint	General Practice
+L02	Back symptom/complaint	General Practice
+L03	Low back symptom/complaint	General Practice
+L04	Chest symptom/complaint	General Practice
+L05	Flank/axilla symptom/complaint	General Practice
+L07	Jaw symptom/complaint	General Practice
+L08	Shoulder symptom/complaint	General Practice
+L09	Arm symptom/complaint	General Practice
+L10	Elbow symptom/complaint	General Practice
+L11	Wrist symptom/complaint	General Practice
+L12	Hand/finger symptom/complaint	General Practice
+L13	Hip symptom/complaint	General Practice
+L14	Leg/thigh symptom/complaint	General Practice
+L15	Knee symptom/complaint	General Practice
+L16	Ankle symptom/complaint	General Practice
+L17	Foot/toe symptom/complaint	General Practice
+L18	Muscle pain	General Practice
+L19	Muscle symptom/complaint NOS	General Practice
+L20	Joint symptom/complaint NOS	General Practice
+L26	Fear of cancer musculoskeletal	General Practice
+L27	Fear of musculoskeletal dis other	General Practice
+L28	Limited function/disability (L)	General Practice
+L29	Musculoskeletal sympt/complt other	General Practice
+L70	Infection of musculoskeletal system	General Practice
+L71	Malignant neoplasm musculoskeletal	General Practice
+L72	Fracture: radius/ulna	General Practice
+L73	Fracture: tibia/fibula	General Practice
+L74	Fracture: hand/foot bone	General Practice
+L75	Fracture: femur	General Practice
+L76	Fracture: other	General Practice
+L77	Sprain/strain of ankle	General Practice
+L78	Sprain/strain of knee	General Practice
+L79	Sprain/strain of joint NOS	General Practice
+L80	Dislocation/subluxation	General Practice
+L81	Injury musculoskeletal NOS	General Practice
+L82	Congenital anomaly musculoskeletal	General Practice
+L83	Neck syndrome	General Practice
+L84	Back syndrome without radiat pain	General Practice
+L85	Acquired deformity of spine	General Practice
+L86	Back syndrome with radiating pain	General Practice
+L87	Bursitis/tendinitis/synovitis NOS	General Practice
+L88	Rheumatoid/seropositive arthritis	General Practice
+L89	Osteoarthrosis of hip	General Practice
+L90	Osteoarthrosis of knee	General Practice
+L91	Osteoarthrosis other	General Practice
+L92	Shoulder syndrome	General Practice
+L93	Tennis elbow	General Practice
+L94	Osteochondrosis	General Practice
+L95	Osteoporosis	General Practice
+L96	Acute internal damage knee	General Practice
+L97	Neoplasm musculoskel benign/unspec	General Practice
+L98	Acquired deformity of limb	General Practice
+L99	Musculoskeletal disease other	General Practice
+N01	Headache	General Practice
+N03	Pain face	General Practice
+N04	Restless legs	General Practice
+N05	Tingling fingers/feet/toes	General Practice
+N06	Sensation disturbance other	General Practice
+N07	Convulsion/seizure	General Practice
+N08	Abnormal involuntary movements	General Practice
+N16	Disturbance of smell/taste	General Practice
+N17	Vertigo/dizziness	General Practice
+N18	Paralysis/weakness	General Practice
+N19	Speech disorder	General Practice
+N26	Fear cancer neurological system	General Practice
+N27	Fear of neurological disease other	General Practice
+N28	Limited function/disability (N)	General Practice
+N29	Neurological sympt/complt other	General Practice
+N70	Poliomyelitis	General Practice
+N71	Meningitis/encephalitis	General Practice
+N72	Tetanus	General Practice
+N73	Neurological infection other	General Practice
+N74	Malignant neoplasm nervous system	General Practice
+N75	Benign neoplasm nervous system	General Practice
+N76	Neoplasm nervous system unspecified	General Practice
+N79	Concussion	General Practice
+N80	Head injury other	General Practice
+N81	Injury nervous system other	General Practice
+N85	Congenital anomaly neurological	General Practice
+N86	Multiple sclerosis	General Practice
+N87	Parkinsonism	General Practice
+N88	Epilepsy	General Practice
+N89	Migraine	General Practice
+N90	Cluster headache	General Practice
+N91	Facial paralysis/bell's palsy	General Practice
+N92	Trigeminal neuralgia	General Practice
+N93	Carpal tunnel syndrome	General Practice
+N94	Peripheral neuritis/neuropathy	General Practice
+N95	Tension headache	General Practice
+N99	Neurological disease other	General Practice
+P01	Feeling anxious/nervous/tense	General Practice
+P02	Acute stress reaction	General Practice
+P03	Feeling depressed	General Practice
+P04	Feeling/behaving irritable/angry	General Practice
+P05	Senility, feeling/behaving old	General Practice
+P06	Sleep disturbance	General Practice
+P07	Sexual desire reduced	General Practice
+P08	Sexual fulfilment reduced	General Practice
+P09	Sexual preference concern	General Practice
+P10	Stammering/stuttering/tic	General Practice
+P11	Eating problem in child	General Practice
+P12	Bedwetting/enuresis	General Practice
+P13	Encopresis/bowel training problem	General Practice
+P15	Chronic alcohol abuse	General Practice
+P16	Acute alcohol abuse	General Practice
+P17	Tobacco abuse	General Practice
+P18	Medication abuse	General Practice
+P19	Drug abuse	General Practice
+P20	Memory disturbance	General Practice
+P22	Child behaviour symptom/complaint	General Practice
+P23	Adolescent behaviour sympt/compl	General Practice
+P24	Specific learning problem	General Practice
+P25	Phase of life problem adult	General Practice
+P27	Fear of mental disorder	General Practice
+P28	Limited function/disability (P)	General Practice
+P29	Psychological sympt/compl other	General Practice
+P70	Dementia	General Practice
+P71	Organic psychosis other	General Practice
+P72	Schizophrenia	General Practice
+P73	Affective psychosis	General Practice
+P74	Anxiety disorder/anxiety state	General Practice
+P75	Somatization disorder	General Practice
+P76	Depressive disorder	General Practice
+P77	Suicide/suicide attempt	General Practice
+P78	Neuraesthenia/surmenage	General Practice
+P79	Phobia/compulsive disorder	General Practice
+P80	Personality disorder	General Practice
+P81	Hyperkinetic disorder	General Practice
+P82	Post-traumatic stress disorder	General Practice
+P85	Mental retardation	General Practice
+P86	Anorexia nervosa/bulimia	General Practice
+P98	Psychosis NOS/other	General Practice
+P99	Psychological disorders other	General Practice
+R01	Pain respiratory system	General Practice
+R02	Shortness of breath/dyspnoea	General Practice
+R03	Wheezing	General Practice
+R04	Breathing problem other	General Practice
+R05	Cough	General Practice
+R06	Nose bleed/epistaxis	General Practice
+R07	Sneezing/nasal congestion	General Practice
+R08	Nose symptom/complaint other	General Practice
+R09	Sinus symptom/complaint	General Practice
+R21	Throat symptom/complaint	General Practice
+R23	Voice symptom/complaint	General Practice
+R24	Haemoptysis	General Practice
+R25	Sputum/phlegm abnormal	General Practice
+R26	Fear  cancer  respiratory system	General Practice
+R27	Fear of respiratory disease other	General Practice
+R28	Limited function/disability (R)	General Practice
+R29	Respiratory symptom/complaint other	General Practice
+R71	Whooping cough	General Practice
+R72	Strep throat	General Practice
+R73	Boil/abscess nose	General Practice
+R74	Upper respiratory infection acute	General Practice
+R75	Sinusitis acute/chronic	General Practice
+R76	Tonsillitis acute	General Practice
+R77	Laryngitis/tracheitis acute	General Practice
+R78	Acute bronchitis/bronchiolitis	General Practice
+R79	Chronic bronchitis	General Practice
+R80	Influenza	General Practice
+R81	Pneumonia	General Practice
+R82	Pleurisy/pleural effusion	General Practice
+R83	Respiratory infection other	General Practice
+R84	Malignant neoplasm bronchus/lung	General Practice
+R85	Malignant neopl respiratory other	General Practice
+R86	Benign neoplasm respiratory	General Practice
+R87	Foreign body nose/larynx/bronchus	General Practice
+R88	Injury respiratory other	General Practice
+R89	Congenital anomaly respiratory	General Practice
+R90	Hypertrophy tonsils/adenoids	General Practice
+R92	Neoplasm respiratory unspecified	General Practice
+R95	Chron obstructive pulmonary disease	General Practice
+R96	Asthma	General Practice
+R97	Allergic rhinitis	General Practice
+R98	Hyperventilation syndrome	General Practice
+R99	Respiratory disease other	General Practice
+S01	Pain/tenderness of skin	General Practice
+S02	Pruritus	General Practice
+S03	Warts	General Practice
+S04	Lump/swelling localized	General Practice
+S05	Lumps/swellings generalized	General Practice
+S06	Rash localized	General Practice
+S07	Rash generalized	General Practice
+S08	Skin colour change	General Practice
+S09	Infected finger/toe	General Practice
+S10	Boil/carbuncle	General Practice
+S11	Skin infection post-traumatic	General Practice
+S12	Insect bite/sting	General Practice
+S13	Animal/human bite	General Practice
+S14	Burn/scald	General Practice
+S15	Foreign body in skin	General Practice
+S16	Bruise/contusion	General Practice
+S17	Abrasion/scratch/blister	General Practice
+S18	Laceration/cut	General Practice
+S19	Skin injury other	General Practice
+S20	Corn/callosity	General Practice
+S21	Skin texture symptom/complaint	General Practice
+S22	Nail symptom/complaint	General Practice
+S23	Hair loss/baldness	General Practice
+S24	Hair/scalp symptom/complaint other	General Practice
+S26	Fear of cancer of skin	General Practice
+S27	Fear of skin disease other	General Practice
+S28	Limited function/disability (S)	General Practice
+S29	Skin symptom/complaint other	General Practice
+S70	Herpes zoster	General Practice
+S71	Herpes simplex	General Practice
+S72	Scabies/other acariasis	General Practice
+S73	Pediculosis/skin infestation other	General Practice
+S74	Dermatophytosis	General Practice
+S75	Moniliasis/candidiasis skin	General Practice
+S76	Skin infection other	General Practice
+S77	Malignant neoplasm of skin	General Practice
+S78	Lipoma	General Practice
+S79	Neoplasm skin benign/unspecified	General Practice
+S80	Solar keratosis/sunburn	General Practice
+S81	Haemangioma/lymphangioma	General Practice
+S82	Naevus/mole	General Practice
+S83	Congenital skin anomaly other	General Practice
+S84	Impetigo	General Practice
+S85	Pilonidal cyst/fistula	General Practice
+S86	Dermatitis seborrhoeic	General Practice
+S87	Dermatitis/atopic eczema	General Practice
+S88	Dermatitis contact/allergic	General Practice
+S89	Diaper rash	General Practice
+S90	Pityriasis rosea	General Practice
+S91	Psoriasis	General Practice
+S92	Sweat gland disease	General Practice
+S93	Sebaceous cyst	General Practice
+S94	Ingrowing nail	General Practice
+S95	Molluscum contagiosum	General Practice
+S96	Acne	General Practice
+S97	Chronic ulcer skin	General Practice
+S98	Urticaria	General Practice
+S99	Skin disease other	General Practice
+T01	Excessive thirst	General Practice
+T02	Excessive appetite	General Practice
+T03	Loss of appetite	General Practice
+T04	Feeding problem of infant/child	General Practice
+T05	Feeding problem of adult	General Practice
+T07	Weight gain	General Practice
+T08	Weight loss	General Practice
+T10	Growth delay	General Practice
+T11	Dehydration	General Practice
+T26	Fear of cancer of endocrine system	General Practice
+T27	Fear endocrine/metabol disease other	General Practice
+T28	Limited function/disability (T)	General Practice
+T29	Endocr/metab/nutr sympt/compl other	General Practice
+T70	Endocrine infection	General Practice
+T71	Malignant neoplasm thyroid	General Practice
+T72	Benign neoplasm thyroid	General Practice
+T73	Neoplasm endocrine other/unspecified	General Practice
+T78	Thyroglossal duct/cyst	General Practice
+T80	Congen  anomaly endocrine/metabolic	General Practice
+T81	Goitre	General Practice
+T82	Obesity	General Practice
+T83	Overweight	General Practice
+T85	Hyperthyroidism/thyrotoxicosis	General Practice
+T86	Hypothyroidism/myxoedema	General Practice
+T87	Hypoglycaemia	General Practice
+T89	Diabetes insulin dependent	General Practice
+T90	Diabetes non-insulin dependent	General Practice
+T91	Vitamin/nutritional deficiency	General Practice
+T92	Gout	General Practice
+T93	Lipid disorder	General Practice
+T99	Endocr/metab/nutrit disease other	General Practice
+U01	Dysuria/painful urination	General Practice
+U02	Urinary frequency/urgency	General Practice
+U04	Incontinence urine	General Practice
+U05	Urination problems other	General Practice
+U06	Haematuria	General Practice
+U07	Urine symptom/complaint other	General Practice
+U08	Urinary retention	General Practice
+U13	Bladder symptom/complaint other	General Practice
+U14	Kidney symptom/complaint	General Practice
+U26	Fear of cancer of urinary system	General Practice
+U27	Fear of urinary disease other	General Practice
+U28	Limited function/disability (U)	General Practice
+U29	Urinary symptom/complaint other	General Practice
+U70	Pyelonephritis/pyelitis	General Practice
+U71	Cystitis/urinary infection other	General Practice
+U72	Urethritis	General Practice
+U75	Malignant neoplasm of kidney	General Practice
+U76	Malignant neoplasm of bladder	General Practice
+U77	Malignant neopl urinary tract other	General Practice
+U78	Benign neoplasm urinary tract	General Practice
+U79	Neoplasm urinary tract unspecified	General Practice
+U80	Injury urinary tract	General Practice
+U85	Congenital anomaly urinary tract	General Practice
+U88	Glomerulonephritis/nephrosis	General Practice
+U90	Orthostatic albuminuria/proteinuria	General Practice
+U95	Urinary calculus	General Practice
+U98	Abnormal urine test NOS	General Practice
+U99	Urinary disease other	General Practice
+W01	Question of pregnancy	General Practice
+W02	Fear of pregnancy	General Practice
+W03	Antepartum bleeding	General Practice
+W05	Pregnancy vomiting/nausea	General Practice
+W10	Contraception postcoital	General Practice
+W11	Contraception oral	General Practice
+W12	Contraception intrauterine	General Practice
+W13	Sterilization female	General Practice
+W14	Contraception female other	General Practice
+W15	Infertility/subfertility female	General Practice
+W17	Post-partum bleeding	General Practice
+W18	Post-partum symptom/complaint other	General Practice
+W19	Lactation symptom/complaint	General Practice
+W21	Concern with body image in pregnancy	General Practice
+W27	Fear of complications of pregnancy	General Practice
+W28	Limited function/disability (W)	General Practice
+W29	Pregnancy symptom/complaint other	General Practice
+W70	Puerperal infection/sepsis	General Practice
+W71	Other infect complic pregn/puerp	General Practice
+W72	Malignant neopl related to pregnancy	General Practice
+W73	Benign/unspecif neopl relat to pregn	General Practice
+W75	Injury complicating pregnancy	General Practice
+W76	Congen anom complicating pregnancy	General Practice
+W78	Pregnancy	General Practice
+W79	Unwanted pregnancy	General Practice
+W80	Ectopic pregnancy	General Practice
+W81	Toxaemia of pregnancy	General Practice
+W82	Abortion spontaneous	General Practice
+W83	Abortion induced	General Practice
+W84	Pregnancy high risk	General Practice
+W85	Gestational diabetes	General Practice
+W90	Uncompl labour/delivery livebirth	General Practice
+W91	Uncompl labour/delivery stillbirth	General Practice
+W92	Compl labour/ delivery livebirth	General Practice
+W93	Compl labour/delivery stillbirth	General Practice
+W94	Puerperal mastitis	General Practice
+W95	Breast dis in pregn/puerperium other	General Practice
+W96	Complications of puerperium other	General Practice
+W99	Disorder of pregn/delivery other	General Practice
+X01	Genital pain female	General Practice
+X02	Menstrual pain	General Practice
+X03	Intermenstrual pain	General Practice
+X04	Painful intercourse female	General Practice
+X05	Menstruation absent/scanty	General Practice
+X06	Menstruation excessive	General Practice
+X07	Menstruation irregular/frequent	General Practice
+X08	Intermenstrual bleeding	General Practice
+X09	Premenstrual symptom/complaint	General Practice
+X10	Postponement of menstruation	General Practice
+X11	Menopausal symptom/complaint	General Practice
+X12	Postmenopausal bleeding	General Practice
+X13	Postcoital bleeding	General Practice
+X14	Vaginal discharge	General Practice
+X15	Vaginal symptom/complaint other	General Practice
+X16	Vulval symptom/complaint	General Practice
+X17	Pelvis symptom/complaint female	General Practice
+X18	Breast pain female	General Practice
+X19	Breast lump/mass female	General Practice
+X20	Nipple symptom/complaint female	General Practice
+X21	Breast sympt/compl female other	General Practice
+X22	Concern breast appearance fema	General Practice
+X23	Fear sexually transm dis female	General Practice
+X24	Fear of sexual dysfunction female	General Practice
+X25	Fear of genital cancer female	General Practice
+X26	Fear of breast cancer female	General Practice
+X27	Fear genital/breast dis female other	General Practice
+X28	Limited function/disability (X)	General Practice
+X29	Genital sympt/compl female other	General Practice
+X70	Syphilis female	General Practice
+X71	Gonorrhoea female	General Practice
+X72	Genital candidiasis female	General Practice
+X73	Genital trichomoniasis female	General Practice
+X74	Pelvic inflammatory disease	General Practice
+X75	Malignant neoplasm cervix	General Practice
+X76	Malignant neoplasm breast female	General Practice
+X77	Malignant neopl genital female other	General Practice
+X78	Fibromyoma uterus	General Practice
+X79	Benign neoplasm breast female	General Practice
+X80	Benign neoplasm female genital	General Practice
+X81	Genital neopl female other/unspecif	General Practice
+X82	Injury genital female	General Practice
+X83	Congenital anomaly genital female	General Practice
+X84	Vaginitis/vulvitis NOS	General Practice
+X85	Cervical disease NOS	General Practice
+X86	Abnormal cervix smear	General Practice
+X87	Uterovaginal prolapse	General Practice
+X88	Fibrocystic disease breast	General Practice
+X89	Premenstrual tension syndrome	General Practice
+X90	Genital herpes female	General Practice
+X91	Condylomata acuminata female	General Practice
+X92	Chlamydia infection genital female	General Practice
+X99	Genital disease female other	General Practice
+Y01	Pain in penis	General Practice
+Y02	Pain in testis/scrotum	General Practice
+Y03	Urethral discharge male	General Practice
+Y04	Penis symptom/complaint other	General Practice
+Y05	Scrotum/testis sympt/compl other	General Practice
+Y06	Prostate symptom/complaint	General Practice
+Y07	Impotence NOS	General Practice
+Y08	Sexual function sympt/compl male	General Practice
+Y10	Infertility/subfertility male	General Practice
+Y13	Sterilization male	General Practice
+Y14	Family planning male other	General Practice
+Y16	Breast symptom/complaint male	General Practice
+Y24	Fear of sexual dysfunction male	General Practice
+Y25	Fear sexually transm disease male	General Practice
+Y26	Fear of genital cancer male	General Practice
+Y27	Fear of genital disease male other	General Practice
+Y28	Limited function/disability (Y)	General Practice
+Y29	Genital symptom/complaint male other	General Practice
+Y70	Syphilis male	General Practice
+Y71	Gonorrhoea male	General Practice
+Y72	Genital herpes male	General Practice
+Y73	Prostatitis/seminal vesiculitis	General Practice
+Y74	Orchitis/epididymitis	General Practice
+Y75	Balanitis	General Practice
+Y76	Condylomata acuminata male	General Practice
+Y77	Malignant neoplasm prostate	General Practice
+Y78	Malign neopl male genital other	General Practice
+Y79	Benign/unspecif neopl male genital	General Practice
+Y80	Injury male genital	General Practice
+Y81	Phimosis/redundant prepuce	General Practice
+Y82	Hypospadias	General Practice
+Y83	Undescended testicle	General Practice
+Y84	Congenital genital anom male other	General Practice
+Y85	Benign prostatic hypertrophy	General Practice
+Y86	Hydrocoele	General Practice
+Y99	Genital disease male other	General Practice
+Z01	Poverty/financial problem	General Practice
+Z02	Food/water problem	General Practice
+Z03	Housing/neighbourhood problem	General Practice
+Z04	Social cultural problem	General Practice
+Z05	Work problem	General Practice
+Z06	Unemployment problem	General Practice
+Z07	Education problem	General Practice
+Z08	Social welfare problem	General Practice
+Z09	Legal problem	General Practice
+Z10	Health care system problem	General Practice
+Z11	Compliance/being ill problem	General Practice
+Z12	Relationship problem with partner	General Practice
+Z13	Partner's behaviour problem	General Practice
+Z14	Partner illness problem	General Practice
+Z15	Loss/death of partner problem	General Practice
+Z16	Relationship problem with child	General Practice
+Z18	Illness problem with child	General Practice
+Z19	Loss/death of child problem	General Practice
+Z20	Relationship problem parent/fam memb	General Practice
+Z21	Behaviour problem parent/fam memb	General Practice
+Z22	Illness problem parent/family memb	General Practice
+Z23	Loss/death parent/fam memb problem	General Practice
+Z24	Relationship problem friend	General Practice
+Z25	Assault/harmful event problem	General Practice
+Z27	Fear of a social problem	General Practice
+Z28	Limited function/disability (Z)	General Practice
+Z29	Social problem NOS	General Practice
+-30	Medical examin/health eval complete	General Practice
+-31	Medical examin/health eval partial	General Practice
+-32	Sensitivity test	General Practice
+-33	Microbiological/immunological test	General Practice
+-34	Blood test	General Practice
+-35	Urine test	General Practice
+-36	Faeces test	General Practice
+-37	Histological/exfoliative cytology	General Practice
+-38	Other laboratory test NEC	General Practice
+-39	Physical function test	General Practice
+-40	Diagnostic endoscopy	General Practice
+-41	Diagnostic radiology/imaging	General Practice
+-42	Electrical tracing	General Practice
+-43	Other diagnostic procedure	General Practice
+-44	Preventive immunization/medic	General Practice
+-45	Observ/health educat/advice/diet	General Practice
+-46	Consultation primary care provider	General Practice
+-47	Consultation with specialist	General Practice
+-48	Clarification/discussion RFE/demand	General Practice
+-49	Other preventive procedure	General Practice
+-50	Medication/prescr/renewal/inject	General Practice
+-51	I&d/flush/aspiration	General Practice
+-52	Exc/remov/biopsy/destruc/debrid/caut	General Practice
+-53	Instrument/catheter/intubate/dilate	General Practice
+-54	Repair/fix-suture/cast/prosth device	General Practice
+-55	Local injection/infiltration	General Practice
+-56	Dressing/pressure/compress/tamponade	General Practice
+-57	Physical medicine/rehabilitation	General Practice
+-58	Therapeutic counselling/listening	General Practice
+-59	Other therap proced/minor surg NEC	General Practice
+-60	Result test/procedure	General Practice
+-61	Result exam/test/lett oth provider	General Practice
+-62	Administrative procedure	General Practice
+-63	Follow-up encounter unspecified	General Practice
+-64	Encounter/prob initiated by provider	General Practice
+-65	Enc/prob init by other than pt/prov	General Practice
+-66	Referral to non-md provider	General Practice
+-67	Referral to physican/hospital	General Practice
+-68	Other referral NEC	General Practice
+-69	Other reason for encounter NEC	General Practice

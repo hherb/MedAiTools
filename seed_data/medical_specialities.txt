@@ -1,0 +1,23 @@
+Addiction Medicine
+Anaesthesia
+Dermatology
+Emergency Medicine, Paediatric Emergency Medicine
+General Practice
+Intensive Care Medicine, Paediatric Intensive Care Medicine
+Medical Administration
+Obstetrics and Gynaecology, Gynaecological Oncology, Maternal-Fetal Medicine, Obstetrics and Gynaecological Ultrasound, Reproductive Endocrinology and Infertility, Urogynaecology
+Occupational and Environmental Medicine
+Ophthalmology
+Paediatrics and Child Health, Clinical Genetics, Community Child Health, General Paediatrics, Neonatal and Perinatal Medicine, Paediatric Cardiology, Paediatric Clinical Pharmacology, Paediatric Endocrinology, Paediatric Gastroenterology and Hepatology, Paediatric Haematology, Paediatric Immunology and Allergy, Paediatric Infectious Diseases, Paediatric Intensive Care Medicine, Paediatric Medical Oncology, Paediatric Nephrology, Paediatric Neurology, Paediatric Nuclear Medicine, Paediatric Palliative Medicine, Paediatric Rehabilitation Medicine, Paediatric Respiratory and Sleep Medicine, Paediatric Rheumatology
+Pain Medicine
+Palliative Medicine
+Pathology, General Pathology, Anatomical Pathology (including Cytopathology), Chemical Pathology, Haematology, Immunology, Microbiology, Forensic Pathology
+Physician, Cardiology, Clinical Genetics, Clinical Pharmacology, Endocrinology, Gastroenterology and Hepatology, General Medicine, Geriatric Medicine, Haematology, Immunology and Allergy, Infectious Diseases, Medical Oncology, Nephrology, Neurology, Nuclear Medicine, Respiratory and Sleep Medicine, Rheumatology
+Psychiatry
+Public Health Medicine
+Radiation Oncology
+Radiology, Diagnostic Radiology, Diagnostic Ultrasound, Nuclear Medicine
+Rehabilitation Medicine
+Sexual Health Medicine
+Sport and Exercise Medicine
+Surgery, Cardio-thoracic Surgery, General Surgery, Neurosurgery, Orthopaedic Surgery, Otolaryngology – Head and Neck Surgery, Oral and Maxillofacial Surgery, Paediatric Surgery, Plastic Surgery, Urology, Vascular Surgery

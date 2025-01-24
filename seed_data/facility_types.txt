@@ -1,0 +1,7 @@
+hospital
+clinic
+nursing post
+GP clinic
+medical center
+pathology lab
+radiology

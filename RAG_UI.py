@@ -122,17 +122,23 @@ class PDFPanel(pn.viewable.Viewer):
         Args:
             pdf (str): The path to the PDF file
         """   
-        self.pdf_pane.object = filepath
-        if not self.RAG.has_been_ingested(filepath):
-            info= pn.state.notifications.info(f"Ingesting [{filepath}]", duration=0)
-            self.RAG.ingest(filepath)
-            self.displayed_pdf=filepath
+        absfilepath = os.path.abspath(filepath)
+        if not os.path.exists(absfilepath):
+            print(f"File {absfilepath} does not exist")
+            self.chat_bot.send("Unfortunately, the file {absfilepath} seems to have been deleted - I can't find it!", user="Assistant", respond=False)
+            return
+        print(f"Setting PDF file to {absfilepath}")
+        self.pdf_pane.object = absfilepath
+        if not self.RAG.has_been_ingested(absfilepath):
+            info= pn.state.notifications.info(f"Ingesting [{absfilepath}]", duration=0)
+            self.RAG.ingest(absfilepath)
+            self.displayed_pdf=absfilepath
             info.destroy()
         else:
-            self.displayed_pdf=filepath
+            self.displayed_pdf=absfilepath
 
 if __name__ == "__main__":
     panel= PDFPanel()
     panel.servable()
-    panel.set_pdf("/Users/hherb/src/github/MedAiTools/library/10.1101-2024.05.09.24307138.pdf")
+    panel.set_pdf('/Users/hherb/medai/library/10.1101-2024.06.21.24309328.pdf')
     pn.serve(panel)

@@ -14,10 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""This model provides a temprary abstraction for LLM services.
+"""This model provides a temporary abstraction for LLM services.
 It is likely to still change over time"""
 
 import os
+import traceback
+import asyncio
 import litellm
 from dotenv import load_dotenv
 import logging
@@ -37,7 +39,7 @@ def get_providers():
 def get_models(provider='ollama'):
         
     if provider=='ollama':
-        return([model['name'] for model in list_local_models()])
+        return([model['model'] for model in list_local_models()])
     if provider=='huggingface':
         return(['enter manually'])
     if provider=='groq':
@@ -137,26 +139,27 @@ class OllamaModel(Model):
         super().__init__(modelname='ollama/'+modelname)
         self.api_key = 'ollama'
         self.api_base = 'http://localhost:11434'
-        self.modelname=modelname               
+        #self.modelname=modelname               
         self.info=ollama.show(modelname)
         #Parameters in the returned list of dictionaries are unfortunately formatted as one single string, need to parse it
-        params = {param.split()[0]: param.split()[1] for param in info['parameters'].split('\n')}
-        self.parameter_size = info['details']['parameter_size']
-        self.quantization = info['details']['quantization_level']
-        self.family = info['details']['family']
-        try:
-            self.temperature=params['temperature']
-        except:
-            self.temperature=0.3
-        try:
-            self.num_ctx=params['num_ctx']
-        except:
-            self.num_ctx=0
-        self.max_tokens=self.num_ctx/2  
-        try: 
-            self.system_prompt=info['details']['system']
-        except:
-            pass
+        # params = {param.split()[0]: param.split()[1] for param in self.info['parameters'].split('\n')}
+        # self.parameter_size = self.info['details']['parameter_size']
+        # self.quantization = self.info['details']['quantization_level']
+        # self.family = self.info['details']['family']
+        # try:
+        #     self.temperature=params['temperature']
+        # except:
+        #     self.temperature=0.3
+        # try:
+        #     self.num_ctx=params['num_ctx']
+        #     self.max_tokens=self.num_ctx/2
+        # except:
+        #     self.num_ctx=0
+        #     self.max_tokens=512
+        # try: 
+        #     self.system_prompt=info['details']['system']
+        # except:
+        #     pass
 
 
 def llm_response(prompt, 
@@ -170,6 +173,25 @@ def llm_response(prompt,
         modelname = f"{provider}/{modelname}"
     response = litellm.completion(model=modelname, messages=messages, temperature=temperature)
     return(response.choices[0].message.content)
+
+async def llm_streaming_response(prompt, 
+                 provider = 'ollama',
+                 modelname = 'Llama3_8b_Instruct_32k:latest',
+                 api_key = 'ollama',
+                 api_base = None, 
+                 temperature=0.3):
+    messages = [{"role": "user", "content": f"{prompt}"}]
+    if provider in ['ollama', 'huggingface', 'groq']:
+        modelname = f"{provider}/{modelname}"
+    response = await litellm.acompletion(model=modelname, messages=messages, temperature=temperature, stream=True)
+    #print(f"response: {response}")
+    #message = ""
+    #async for chunk in response:
+    #    message += chunk #["choices"][0]["delta"].get("content", "")
+    #    yield message
+    async for chunk in response:
+            yield(chunk)
+    #return(response.choices[0].message.content)
 
     
 def answer_this(prompt : str, 
@@ -294,10 +316,72 @@ class LLM:
             return response.choices[0].message.content.strip()
         else:
             return response
+        
 
+    def generate_streaming(self, prompt) -> str:
+        """
+        :prompt: str, the prompt to generate from
+        :model: str, the model to use
+        :return: list[dict], the generated response in OpenAI API format if quickanswer is False, else the response as a string
+
+        """
+        #litellm.api_base = "http://localhost:11434/v1"
+        #litellm.api_key="lm-studio"
+        messages=[]
+        if self.system_prompt is not None:
+            messages.append({"role": "system", "content": self.system_prompt})
+        messages.append({"role": "user", "content": f"{prompt}"})
+        #print(f"Generating from model {model} with prompt {prompt}")
+        response = litellm.acompletion(messages=messages, 
+                                  model=self.model.get_model(), 
+                                  api_key=self.model.get_api_key(), 
+                                  api_base=self.model.get_api_base(),  
+                                  temperature=self.model.get_temperature(), 
+                                  max_tokens=self.model.get_max_tokens(),
+                                  frequency_penalty=self.model.get_frequency_penalty(),
+                                  presence_penalty=self.model.get_presence_penalty(),
+                                  stop=self.model.get_stop(),
+                                  stream=True
+                                  )     
+        return response 
+    
+    async def completion_call(self, prompt):
+        messages=[]
+        if self.system_prompt is not None:
+            messages.append({"role": "system", "content": self.system_prompt})
+        messages.append({"role": "user", "content": f"{prompt}"})
+        try:
+            #print("test acompletion + streaming")
+            response = await litellm.acompletion(messages=messages, 
+                                  model=self.model.get_model(), 
+                                  api_key=self.model.get_api_key(), 
+                                  api_base=self.model.get_api_base(),  
+                                  temperature=self.model.get_temperature(), 
+                                  #max_tokens=self.model.get_max_tokens(),
+                                  #frequency_penalty=self.model.get_frequency_penalty(),
+                                  #presence_penalty=self.model.get_presence_penalty(),
+                                  #stop=self.model.get_stop(),
+                                  stream=True
+                                  ) 
+            #print(f"response: {response}")
+            async for chunk in response:
+                yield(chunk)
+        except:
+            print(f"error occurred: {traceback.format_exc()}")
+            pass
+
+async def main():
+    prompt = "Typical adverse effects of Doxycyline? Tell me in details of at least two paragraphs"
+    model=OllamaModel("phi3.5:3.8b-mini-instruct-fp16")
+    llm=LLM(model)
+    #print(f"Response from {llm.model.get_model()}: {llm.generate(prompt)}")
+    async for chunk in llm_streaming_response(prompt):  #llm.completion_call(prompt):
+        if chunk is not None:
+            print(chunk.choices[0].delta.content, end="") 
 
 if __name__ == "__main__":
-    models = (LLM(get_openai_multimodal_model()), LLM(get_local_default_model()), LLM(get_local_32k_model()))
-    prompt = "Typical adverse effects of Doxycyline?"
-    for llm in models:
-        print(f"Response from {llm.model.get_model()}: {llm.generate(prompt)}")
+    #models = (LLM(get_openai_multimodal_model()), LLM(get_local_default_model()), LLM(get_local_32k_model()))
+    #prompt = "Typical adverse effects of Doxycyline?"
+    #for llm in models:
+        #print(f"Response from {llm.model.get_model()}: {llm.generate(prompt)}")
+    asyncio.run(main())
