@@ -643,7 +643,10 @@ def create_synthetic_person(age=None, gender=None, state=None, postcode=None, db
     person['title'] = 'Mr' if gender =='male' else 'Mrs' if is_within_odds(0.85) else 'Miss'
     
     #allocate names and addresses
-    names = get_random_names(db_name=db_name, how_many=1, gender=gender)[0]
+    try:
+        names = get_random_names(db_name=db_name, how_many=1, gender=gender)[0]
+    except IndexError:
+        names = {'firstname': 'Unknown', 'surname': 'Unknown'}
     person['firstname'] = names['firstname']
     person['surname'] = names['surname']
     if is_within_odds(0.7): #odds for having a middle name

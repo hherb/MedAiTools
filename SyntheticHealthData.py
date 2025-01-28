@@ -22,13 +22,14 @@ from textwrap import dedent
 
 __version__= 0.06
 
-DEFAULT_MODEL='qwen2.5:7b-instruct-q8_0'
-#DEFAULT_MODEL='qwen2.5:14b-instruct-q8_0'
+#DEFAULT_MODEL='qwen2.5:7b-instruct-q8_0'
+DEFAULT_MODEL='qwen2.5:14b-instruct-q8_0'
 #DEFAULT_MODEL='qwen2.5:32b-instruct-q8_0'
 ### DOES NOT WORK ##### DEFAULT_MODEL="granite3-dense:8b-instruct-q8_0"
 
 
-PROGRESSNOTE_TEMPLATE="""As an experienced Australian GP Dr {{doctor_name}}, write a detailed progress note for a patient.
+
+GP_PROGRESSNOTE_TEMPLATE="""As an experienced Australian GP Dr {{doctor_name}}, write a detailed progress note for a patient.
     Include, if and where appropriate, only  placeholders in {{ }} for identifying some or all the data listed here:
     >> {prompt_data} <<.
     For example, instead of writing the patient's name, write {{name}}.
@@ -82,14 +83,15 @@ RADIOLOGY_REPORT_TEMPLATE=""" As a radiologist, Dr {{doctor_name}}, working at {
     prescriptions, and similar medical data in the response. Do not write any medication, previous medication, or treatment as a placeholder.
     """
 
-LABTEST_REPORT_TEMPLATE = """Generate a typical pathology test report for {{investigation}}. Sign as Dr {{doctor_name}}.
+LABTEST_REPORT_TEMPLATE = """Generate a typical pathology test report from an Australian lab for {{investigation}}. Sign as Dr {{doctor_name}}.
     Include, if and where appropriate, as placeholders for identifying the data listed in curly brackets as follows:
     >> {prompt_data} <<.  
-    Include that data with natural fluency as it would appear in a usual pathology report. 
+    Include that data with natural fluency as it would appear in a usual Australian pathology report. 
     DO NOT include any other personal identifying data in the response, only those from the list of placeholders.
+
     """
 
-templates = {'progress_note': PROGRESSNOTE_TEMPLATE, 
+templates = {'gp_progress_note': GP_PROGRESSNOTE_TEMPLATE, 
              'specialist_report': SPECIALIST_REPORT_TEMPLATE, 
              'psychiatrist_report': PSYCHIATRIST_REPORT_TEMPLATE, 
              'radiology_report': RADIOLOGY_REPORT_TEMPLATE, 
@@ -158,7 +160,7 @@ def generate_patient_data_for_template(template_type='progress_note'):
             data[key] = address[key]
 
     match template_type:
-        case 'progress_note':
+        case 'gp_progress_note':
             data['condition'] = random_diagnosis(include_paediatric=data['age']<16, include_female_only=data['gender'].lower()=='f')
         case 'specialist_report':
             data['speciality'] = random_speciality(generalist_ratio=0.0)
@@ -202,7 +204,8 @@ class Synthetic_Health_Data:
 
     def create_prompt(self, data:dict):
         """Create a prompt for the template using the given data."""
-        data['prompt_data'] = str(data)
+        #data['prompt_data'] = str(data)
+        data['prompt_data'] = [key for key in data.keys()]  #list of keys in the data dictionary
         #print(f"PROMPT_DATA: {data['prompt_data']}")
         prompt =  self.prompt_template.format(**data)
         return(prompt)
@@ -256,21 +259,21 @@ class Synthetic_Health_Data:
 
 
 class GP_Progress_Note(Synthetic_Health_Data):
-    def __init__(self, prompt_template=PROGRESSNOTE_TEMPLATE):
+    def __init__(self, prompt_template=GP_PROGRESSNOTE_TEMPLATE):
         super().__init__(prompt_template)
     
     def create_prompt(self, data : dict):
-        #data['prompt_data'] = str(data)
-        data['prompt_data'] = [key for key in data.keys()]  #list of keys in the data dictionary
+        prompt = super().create_prompt(data)
+        #data['prompt_data'] = [key for key in data.keys()]  #list of keys in the data dictionary
         #print(f"PROMPT_DATA: {data['prompt_data']}")
-        prompt =  self.prompt_template.format(**data)
-        if is_female(data['gender']) and is_within_odds(5):
+        #prompt =  self.prompt_template.format(**data)
+        if is_female(data['gender']) and is_within_odds(10):
          prompt += "Include a sentence that the patient's maiden name was {maidenname}.\n"
 
-        if is_within_odds(6):
+        if is_within_odds(15):
             prompt += "Include a sentence that the patient's alias is {alias}.\n"
 
-        if is_within_odds(3):
+        if is_within_odds(8):
             prompt += """"Include that the patient said to contact them through their {contact_relation} on {relation_phone}"\n"""
         
 
@@ -287,8 +290,7 @@ class Specialist_Report(Synthetic_Health_Data):
         super().__init__(prompt_template)
     
     def create_prompt(self, data : dict):
-        data['prompt_data'] = str(data)
-        prompt =  self.prompt_template.format(**data)
+        prompt=super().create_prompt(data)
 
         if is_female(data['gender']) and is_within_odds(5):
             prompt += "Include a sentence that the patient's maiden name was {maidenname}.\n"
@@ -314,8 +316,7 @@ class Psychiatrist_Report(Synthetic_Health_Data):
         super().__init__(prompt_template)
     
     def create_prompt(self, data : dict):
-        data['prompt_data'] = str(data)
-        prompt =  self.prompt_template.format(**data)
+        prompt=super().create_prompt(data)
 
         if is_female(data['gender']) and is_within_odds(5):
             prompt += "Include a sentence that the patient's maiden name was {maidenname}.\n"
@@ -340,8 +341,7 @@ class Radiology_Report(Synthetic_Health_Data):
         super().__init__(prompt_template)
     
     def create_prompt(self, data : dict):
-        data['prompt_data'] = str(data)
-        prompt =  self.prompt_template.format(**data)
+        prompt=super().create_prompt(data)
 
         if is_female(data['gender']) and is_within_odds(5):
             prompt += "Include a sentence that the patient's maiden name was {maidenname}.\n"
@@ -360,7 +360,17 @@ class Radiology_Report(Synthetic_Health_Data):
         Answer with ONLY the report, no additional information, no additional comments."""
         return(prompt)
     
-
+class Synthetic_Labtest_Report(Synthetic_Health_Data):
+    def __init__(self, prompt_template=LABTEST_REPORT_TEMPLATE):
+        super().__init__(prompt_template)
+    
+    def create_prompt(self, data : dict):
+        prompt=super().create_prompt(data)
+        prompt += "The purpose is to generate synthetic data for training NER models. Do not include '{' characters other than for placeholders.\n"
+        prompt += """Use Australian medical terminology and conventions, and metric units (e.g. degress Celsius for temperature). 
+        Include the patient's identifying details naturally throughout the note.
+        Answer with ONLY the report, no additional information, no additional comments."""
+        return(prompt)
 
 def main(template='gp_progress_note', num_records=1, model=DEFAULT_MODEL, output_dir='synthetic_records'):  
     """
@@ -387,6 +397,8 @@ def main(template='gp_progress_note', num_records=1, model=DEFAULT_MODEL, output
             generator = Psychiatrist_Report
         case 'radiology_report':
             generator = Radiology_Report
+        case 'labtest_report':
+            generator = Synthetic_Labtest_Report
         case _:
             print(f"Invalid template type: {template}")
             sys.exit(1)
@@ -406,6 +418,6 @@ def main(template='gp_progress_note', num_records=1, model=DEFAULT_MODEL, output
 
 
 if __name__ == '__main__':
-    main()
+    main(template='labtest_report', num_records=1, model=DEFAULT_MODEL, output_dir='synthetic_records2')
 
 
