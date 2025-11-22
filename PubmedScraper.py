@@ -11,8 +11,9 @@ def pubmed_search_string(text):
     :param text: The input string.
     :return: The string with replaced quotes.
     """
-    pattern = re.compile(r'[\'\"]+|[\"'](?!\w)[\'"]+')
-    return re.sub(pattern, r'+', text, flags=re.IGNORECASE)
+    # Match one or more single or double quotes
+    pattern = re.compile(r'[\'"]+')
+    return re.sub(pattern, '+', text)
 
 
 loader = PubmedReader()

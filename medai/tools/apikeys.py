@@ -12,4 +12,5 @@ def load_api_keys(APIS : list[str] =APIS) -> None:
         value = os.getenv(key)
         if value is None:
             logging.error(f'Missing environment variable {key}')
-        os.environ[key] = value
+        else:
+            os.environ[key] = value

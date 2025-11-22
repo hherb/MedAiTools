@@ -16,8 +16,8 @@
 # ! pip install litellm, llama-parse, weasyprint, markdown
 import os
 #from litellm import completion
-from medai.tools.apikeys import load_api_keys	  
-from PDFParser import PDFParser
+from medai.tools.apikeys import load_api_keys
+from PDFParser import PDFParser, pdf2md
 from medai.LLM import Model, LLM, get_local_default_model, get_local_32k_model
 
 #FAST_LLM="gpt-3.5-turbo-instruct"
@@ -82,7 +82,7 @@ class StudyCritique:
 	
 	def pdf2document(self, pdf_file):
 		if pdf_file is not None:
-			doc = PDFParser.pdf2md(pdf_file)
+			doc = pdf2md(pdf_file)
 			return(doc)
 		else:
 			print("ERROR: empty document sent for conversion")

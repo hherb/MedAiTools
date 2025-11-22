@@ -288,7 +288,7 @@ class LLM:
         self.system_prompt = system_prompt
 
 
-    def generate(self, prompt, quickanswer=True) -> str or list[dict]:
+    def generate(self, prompt, quickanswer=True):
         """
         :prompt: str, the prompt to generate from
         :model: str, the model to use
