@@ -26,6 +26,8 @@ conversion service without having to change further source code depnding on this
 
 import os
 import re
+import shutil
+import time
 import pathlib
 from tqdm import tqdm
 import asyncio
@@ -178,7 +180,7 @@ async def a_all_pdfs2md(pdf_directory: str, output_md_dir=None, maxnum=None, met
         i += 1
         if maxnum and i >= maxnum:
             break
-        wait(1)
+        time.sleep(1)
     return i
 
 def all_pdfs2md(pdf_directory: str, output_md_dir=None, maxnum=None, method="pymupdf4llm", force=False, remove_all_line_numbers=True):

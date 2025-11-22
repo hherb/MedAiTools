@@ -161,16 +161,16 @@ def randomize_date_format(date_str):
 
 def get_randomized_time(working_hours_only=False, working_hours=range(8, 18)):
     """Generate a random time string in a randomtime format.
-    
+
     Args:
         working_hours_only (bool): If True, only generate times between workinghours range.
         working_hours (range): The range of working hours to generate times for."""
-    
+
     if working_hours_only:
         hour = random.choice(working_hours)
     else:
         hour = random.randint(0, 23)
-        minute = random.randint(0, 59)
+    minute = random.randint(0, 59)
     time=dt.time(hour, minute)
     #create a string with random time formats, varying between 24hr and 12 hr with am/pm etc, while minding the working hours, and also varying leading zeros
     #do it similar to the randomized_date_format function, using the hour and minute generated above
@@ -476,5 +476,5 @@ if __name__ == "__main__":
     if args.annotate.lower() == 'y':
         main_template(num_records=num_records, model=model, output_dir=output_dir)
     else:
-        main(num_records=num_records, model=model, output_dir=output_dir, output_file=args.outfile, append=append)   
+        main(num_records=num_records, model=model, output_file=args.outfile, append=append)   
     

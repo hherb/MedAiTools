@@ -117,7 +117,7 @@ class Ollama_Config(Configuration):
         self.config['LLM_PROVIDER']='ollama'
         self.config["OLLAMA_BASE_URL"] = "http://localhost:11434" 
         self.config["EMBEDDING_PROVIDER"] = "ollama"
-        self.config["OLLAMA_EMBEDDING_MODEL"] : "mxbai-embed-large"
+        self.config["OLLAMA_EMBEDDING_MODEL"] = "mxbai-embed-large"
         self.config['FAST_LLM_MODEL'] = 'llama3-groq-tool-use:8b-q8_0'
         self.config['SMART_LLM_MODEL'] = 'nous-hermes2:34b-yi-q8_0'
         
